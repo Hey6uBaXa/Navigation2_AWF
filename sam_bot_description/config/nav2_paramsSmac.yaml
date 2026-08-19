@@ -1,0 +1,785 @@
+amcl:
+  ros__parameters:
+    alpha1: 0.35
+    alpha2: 0.35
+    alpha3: 0.25
+    alpha4: 0.35
+    alpha5: 0.2
+    use_sim_time: true
+    base_frame_id: "base_link"
+    beam_skip_distance: 0.5
+    beam_skip_error_threshold: 0.9
+    beam_skip_threshold: 0.3
+    do_beamskip: false
+    global_frame_id: "map"
+    lambda_short: 0.1
+    laser_likelihood_max_dist: 2.0
+    laser_max_range: 100.0
+    laser_min_range: -1.0
+    laser_model_type: "likelihood_field"
+    max_beams: 360
+    max_particles: 5000
+    min_particles: 1000
+    odom_frame_id: "odom"
+    pf_err: 0.05
+    pf_z: 0.99
+    recovery_alpha_fast: 0.0
+    recovery_alpha_slow: 0.0
+    resample_interval: 1
+    robot_model_type: "nav2_amcl::DifferentialMotionModel"
+    #robot_model_type: "nav2_amcl::OmniMotionModel"
+    save_pose_rate: 0.5
+    sigma_hit: 0.2
+    tf_broadcast: true
+    transform_tolerance: 1.0
+    update_min_a: 0.01
+    update_min_d: 0.01
+    z_hit: 0.8
+    z_max: 0.05
+    z_rand: 0.2
+    z_short: 0.05
+    scan_topic: /livox/scan_low
+    set_initial_pose: false
+    initial_pose:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      yaw: 0.0
+
+bt_navigator:
+  ros__parameters:
+    use_sim_time: true
+    global_frame: map
+    robot_base_frame: base_link
+    odom_topic: "/tricycle_controller/odom"
+    bt_loop_duration: 10
+    default_server_timeout: 20
+    wait_for_service_timeout: 1000
+    action_server_result_timeout: 900.0
+    navigators: ["navigate_to_pose", "navigate_through_poses"]
+    navigate_to_pose:
+      plugin: "nav2_bt_navigator::NavigateToPoseNavigator"
+    navigate_through_poses:
+      plugin: "nav2_bt_navigator::NavigateThroughPosesNavigator"
+    # 'default_nav_through_poses_bt_xml' and 'default_nav_to_pose_bt_xml' are use defaults:
+    # nav2_bt_navigator/navigate_to_pose_w_replanning_and_recovery.xml
+    # nav2_bt_navigator/navigate_through_poses_w_replanning_and_recovery.xml
+    # They can be set here or via a RewrittenYaml remap from a parent launch file to Nav2.
+
+    # plugin_lib_names is used to add custom BT plugins to the executor (vector of strings).
+    # Built-in plugins are added automatically
+    # plugin_lib_names: []
+
+    error_code_name_prefixes:
+      - assisted_teleop
+      - backup
+      - compute_path
+      - dock_robot
+      - drive_on_heading
+      - follow_path
+      - nav_thru_poses
+      - nav_to_pose
+      - route
+      - spin
+      - undock_robot
+      - wait
+
+controller_server:
+  ros__parameters:
+    use_sim_time: true
+    controller_frequency: 100.0
+    costmap_update_timeout: 0.30
+    min_x_velocity_threshold: 0.001
+    min_y_velocity_threshold: 0.001
+    min_theta_velocity_threshold: 0.001
+    failure_tolerance: 0.3
+    progress_checker_plugins: ["progress_checker"]
+    goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"   general_goal_checker
+    controller_plugins: ["FollowPath"]
+    odom_topic: "/tricycle_controller/odom"
+    use_realtime_priority: false
+    enable_stamped_cmd_vel: true
+
+    # Progress checker parameters
+    progress_checker:
+      plugin: "nav2_controller::SimpleProgressChecker"
+      required_movement_radius: 0.05
+      movement_time_allowance: 20.0
+    # Goal checker parameters
+    #precise_goal_checker:
+    #  plugin: "nav2_controller::SimpleGoalChecker"
+    #  xy_goal_tolerance: 0.25
+    #  yaw_goal_tolerance: 0.25
+    #  stateful: True
+    general_goal_checker:
+      stateful: True
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.25
+      yaw_goal_tolerance: 0.55
+    FollowPath:
+      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+
+      # =========================
+      # Основная скорость
+      # =========================
+
+      desired_linear_vel: 1.0
+
+      # =========================
+      # Lookahead
+      # =========================
+
+      lookahead_dist: 0.8
+      min_lookahead_dist: 0.5
+      max_lookahead_dist: 1.2
+      lookahead_time: 1.5
+      use_velocity_scaled_lookahead_dist: true
+
+      # =========================
+      # Повороты и замедление
+      # =========================
+
+      use_regulated_linear_velocity_scaling: true
+      regulated_linear_scaling_min_radius: 0.1
+      regulated_linear_scaling_min_speed: 0.04
+
+      # =========================
+      # Замедление около препятствий
+      # =========================
+
+      use_cost_regulated_linear_velocity_scaling: true
+      cost_scaling_dist: 0.3
+      cost_scaling_gain: 0.3
+
+      # Должен совпадать с inflation_layer.cost_scaling_factor
+      inflation_cost_scaling_factor: 10.0
+
+      # =========================
+      # Приближение к цели
+      # =========================
+
+      approach_velocity_scaling_dist: 0.5
+      min_approach_linear_velocity: 0.06
+
+      # =========================
+      # Collision checking
+      # =========================
+
+      use_collision_detection: true
+      max_allowed_time_to_collision_up_to_carrot: 2.0
+
+      # =========================
+      # Вращение на месте
+      # =========================
+
+      use_rotate_to_heading: false
+      rotate_to_heading_angular_vel: 0.3
+      rotate_to_heading_min_angle: 0.785
+      max_angular_accel: 0.3
+
+      # =========================
+      # Задний ход
+      # =========================
+
+      allow_reversing: true
+
+      # =========================
+      # TF и состояние
+      # =========================
+
+      transform_tolerance: 0.5
+      max_robot_pose_search_dist: 10.0
+      stateful: true
+
+      # =========================
+      # Дополнительно
+      # =========================
+
+      use_fixed_curvature_lookahead: false
+      curvature_lookahead_dist: 0.70
+      interpolate_curvature_after_goal: false
+      use_cancel_deceleration: true
+      cancel_deceleration: 0.5
+
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      use_sim_time: true
+      update_frequency: 10.0
+      publish_frequency: 5.0
+      global_frame: odom
+      robot_base_frame: base_link
+      rolling_window: true
+      width: 40
+      height: 40
+      resolution: 0.05
+      # footprint: "[
+      #   [0.55, 0.50],
+      #   [0.55, -0.50],
+      #   [-1.50, -0.50],
+      #   [-1.50, 0.50]
+      # ]"
+      footprint: "[
+        [-0.13, 0.50],
+        [-0.13, -0.10],
+        [1.40, -0.20],
+        [1.40, 0.60]
+      ]"
+      plugins: ["voxel_layer", "inflation_layer", "obstacle_layer"]
+
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        cost_scaling_factor: 10.0
+        inflation_radius: 0.4
+        custom_inscribed_radius: 0.45
+
+      voxel_layer:
+        plugin: "nav2_costmap_2d::VoxelLayer"
+        enabled: True
+        publish_voxel_map: True
+        origin_z: 0.0
+        z_resolution: 0.20
+        z_voxels: 16
+        max_obstacle_height: 3.0
+        mark_threshold: 0
+        observation_sources: livox_low
+        # 0. 2D LiDAR
+        # scan:
+        #   # A relative topic will be appended to the parent of the local_costmap namespace.
+        #   # For example:
+        #   #   * User chosen namespace is `tb4`.
+        #   #   * User chosen topic is `scan`.
+        #   #   * Topic will be remapped to `/tb4/scan` without `local_costmap`.
+        #   #   * Use global topic `/scan` if you do not wish the node namespace to apply
+        #   topic: scan
+        #   max_obstacle_height: 2.0
+        #   clearing: false
+        #   marking: true
+        #   data_type: "LaserScan"
+        #   raytrace_max_range: 3.0
+        #   raytrace_min_range: 0.0
+        #   obstacle_max_range: 2.5
+        #   obstacle_min_range: 0.0
+
+        # 1. 3D LiDAR Livox Mid-360
+        livox_cloud:
+          topic: /livox/points      # Проверьте имя вашего топика (может быть /livox/points)
+          data_type: "PointCloud2"
+          min_obstacle_height: 0.1   # Игнорируем отражения от пола
+          max_obstacle_height: 2.0   # Препятствия выше робота не учитываем
+          obstacle_max_range: 4.5    # Обсчитываем препятствия в радиусе 4.5 метров
+          obstacle_min_range: 0.1
+          raytrace_max_range: 5.0    # Стираем ушедшие препятствия до 5 метров
+          raytrace_min_range: 0.1
+          clearing: true
+          marking: true
+
+        # 2. Передняя камера глубины
+        front_camera:
+          topic: /front_depth_camera/points  # Укажите ваш топик PointCloud2 передней камеры
+          data_type: "PointCloud2"
+          min_obstacle_height: 0.15  # Отсекаем шум пола и блики
+          max_obstacle_height: 2.0
+          obstacle_max_range: 3.5    # Камеры глубины на улице/в симуляции точны до 3-4 метров
+          obstacle_min_range: 0.2
+          raytrace_max_range: 4.0
+          raytrace_min_range: 0.2
+          clearing: true
+          marking: true
+
+        # 3. Задняя камера глубины (чтобы не врезаться при движении назад/разворотах)
+        back_camera:
+          topic: /rear_depth_camera/points   # Укажите ваш топик PointCloud2 задней камеры
+          data_type: "PointCloud2"
+          min_obstacle_height: 0.15
+          max_obstacle_height: 2.0
+          obstacle_max_range: 3.5
+          obstacle_min_range: 0.2
+          raytrace_max_range: 4.0
+          raytrace_min_range: 0.2
+          clearing: true
+          marking: true
+
+        livox_low:
+          topic: /livox/scan_low
+          data_type: LaserScan
+          clearing: true
+          marking: true
+          observation_persistence: 0.2
+          expected_update_rate: 0.0
+          obstacle_min_range: 0.2
+          obstacle_max_range: 7.0
+          raytrace_min_range: 0.2
+          raytrace_max_range: 8.0
+          inf_is_valid: true
+
+        livox_middle:
+          topic: /livox/scan_middle
+          data_type: LaserScan
+          clearing: true
+          marking: true
+          observation_persistence: 0.2
+          expected_update_rate: 0.0
+          obstacle_min_range: 0.2
+          obstacle_max_range: 7.0
+          raytrace_min_range: 0.2
+          raytrace_max_range: 8.0
+          inf_is_valid: false
+
+        livox_high:
+          topic: /livox/scan_high
+          data_type: LaserScan
+          clearing: true
+          marking: true
+          observation_persistence: 0.2
+          expected_update_rate: 0.0
+          obstacle_min_range: 0.2
+          obstacle_max_range: 7.0
+          raytrace_min_range: 0.2
+          raytrace_max_range: 8.0
+          inf_is_valid: false
+
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: true  
+        observation_sources: livox_low
+        livox_low:
+          topic: /livox/scan_low
+          data_type: LaserScan
+          clearing: true
+          marking: true
+          observation_persistence: 0.0
+          expected_update_rate: 0.25
+          obstacle_min_range: 0.2
+          obstacle_max_range: 5.0
+          raytrace_min_range: 0.2
+          raytrace_max_range: 6.0
+          inf_is_valid: true
+
+        livox_middle:
+          topic: /livox/scan_middle
+          data_type: LaserScan
+          clearing: true
+          marking: true
+          observation_persistence: 0.2
+          expected_update_rate: 0.25
+          obstacle_min_range: 0.2
+          obstacle_max_range: 5.0
+          raytrace_min_range: 0.2
+          raytrace_max_range: 6.0
+          inf_is_valid: true
+          
+      static_layer:
+        plugin: "nav2_costmap_2d::StaticLayer"
+        map_subscribe_transient_local: true
+      always_send_full_costmap: false
+
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      use_sim_time: true
+      update_frequency: 5.0
+      publish_frequency: 2.0
+      global_frame: map
+      robot_base_frame: base_link
+      # footprint: "[
+      #   [0.55, 0.50],
+      #   [0.55, -0.50],
+      #   [-1.50, -0.50],
+      #   [-1.50, 0.50]
+      # ]"
+      footprint: "[
+        [-0.13, 0.50],
+        [-0.13, -0.10],
+        [1.40, -0.30],
+        [1.40, 0.60]
+      ]"
+      resolution: 0.05
+      track_unknown_space: true
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: True
+        observation_sources: livox_low
+        
+        # scan:
+        #   # A relative topic will be appended to the parent of the global_costmap namespace.
+        #   # For example:
+        #   #   * User chosen namespace is `tb4`.
+        #   #   * User chosen topic is `scan`.
+        #   #   * Topic will be remapped to `/tb4/scan` without `global_costmap`.
+        #   #   * Use global topic `/scan` if you do not wish the node namespace to apply
+        #   topic: scan
+        #   max_obstacle_height: 2.0
+        #   clearing: True
+        #   marking: True
+        #   data_type: "LaserScan"
+        #   raytrace_max_range: 3.0
+        #   raytrace_min_range: 0.0
+        #   obstacle_max_range: 2.5
+        #   obstacle_min_range: 0.0
+
+        livox:
+          topic: /livox/points 
+          data_type: "PointCloud2"
+          marking: True
+          clearing: True
+          obstacle_max_range: 5.0
+          obstacle_min_range: 0.1
+          raytrace_max_range: 6.0
+          raytrace_min_range: 0.1
+          max_obstacle_height: 2.5
+          min_obstacle_height: 0.05
+
+        livox_low:
+          topic: /livox/scan_low
+          data_type: LaserScan
+          clearing: true
+          marking: true
+          observation_persistence: 5.0
+          expected_update_rate: 0.0
+          obstacle_min_range: 0.2
+          obstacle_max_range: 7.0
+          raytrace_min_range: 0.2
+          raytrace_max_range: 8.0
+          inf_is_valid: true
+
+        livox_middle:
+          topic: /livox/scan_middle
+          data_type: LaserScan
+          clearing: true
+          marking: true
+          observation_persistence: 5.0
+          expected_update_rate: 0.0
+          obstacle_min_range: 0.2
+          obstacle_max_range: 7.0
+          raytrace_min_range: 0.2
+          raytrace_max_range: 8.0
+          inf_is_valid: false
+
+        livox_high:
+          topic: /livox/scan_high
+          data_type: LaserScan
+          clearing: false
+          marking: true
+          observation_persistence: 0.2
+          expected_update_rate: 0.0
+          obstacle_min_range: 0.2
+          obstacle_max_range: 7.0
+          raytrace_min_range: 0.2
+          raytrace_max_range: 8.0
+          inf_is_valid: false
+      
+      static_layer:
+        plugin: "nav2_costmap_2d::StaticLayer"
+        map_subscribe_transient_local: True
+
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        cost_scaling_factor: 10.0
+        inflation_radius: 0.4
+        custom_inscribed_radius: 0.45
+      always_send_full_costmap: True
+
+slam_toolbox:
+  ros__parameters:
+    use_sim_time: true
+    map_frame: map
+    odom_frame: odom
+    base_frame: base_link
+    scan_topic: /livox/scan_low
+
+map_saver:
+  ros__parameters:
+    use_sim_time: true
+    save_map_timeout: 5.0
+    free_thresh_default: 0.25
+    occupied_thresh_default: 0.65
+    map_subscribe_transient_local: True
+
+planner_server:
+  ros__parameters:
+    use_sim_time: true
+    expected_planner_frequency: 2.0
+    planner_plugins: ["GridBased"]
+
+    GridBased:
+      plugin: "nav2_smac_planner::SmacPlannerLattice"
+
+      # ======================================================
+      # Файл примитивов движения для Ackermann погрузчика
+      # ======================================================
+
+      # Берём готовый Ackermann набор с радиусом поворота 1м
+      # и разрешением 5 см (совпадает с costmap)
+      lattice_filepath: "/opt/ros/jazzy/share/nav2_smac_planner/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann/output.json"
+
+      # ======================================================
+      # Основные настройки поиска
+      # ======================================================
+
+      # Допуск до конечной точки в метрах
+      tolerance: 0.5
+
+      # Разрешить движение через неизвестные клетки
+      allow_unknown: true
+
+      # Максимум итераций поиска
+      max_iterations: 1000000
+
+      # Итерации при приближении к цели
+      max_on_approach_iterations: 1000
+
+      # Максимальное время планирования, сек
+      max_planning_time: 10.0
+
+      # ======================================================
+      # Analytic expansion
+      # ======================================================
+
+      # Как часто пробовать аналитически достроить путь к цели
+      analytic_expansion_ratio: 3.5
+
+      # Для raduis 1м ставим 5-6 м
+      analytic_expansion_max_length: 5.0
+
+      analytic_expansion_max_cost: 200.0
+      analytic_expansion_max_cost_override: false
+
+      # ======================================================
+      # Стоимости манёвров
+      # ======================================================
+
+      # Штраф за смену паттерна движения
+      change_penalty: 0.0
+
+      # Штраф за криволинейное движение
+      non_straight_penalty: 1.05
+
+      # Штраф за задний ход
+      # Для маневрирования в проходах задний ход важен
+      reverse_penalty: 1.05
+
+      # Штраф за движение в дорогих клетках costmap
+      cost_penalty: 3.0
+
+      # Ретроспективный штраф
+      retrospective_penalty: 0.015
+
+      # ======================================================
+      # Производительность
+      # ======================================================
+
+      downsample_costmap: false
+      downsampling_factor: 1
+
+      # ======================================================
+      # Сглаживание пути
+      # ======================================================
+
+      smooth_path: true
+
+      smoother:
+        max_iterations: 1000
+        w_smooth: 0.3
+        w_data: 0.2
+        w_costmap: 0.025
+        tolerance: 1.0e-10
+        do_refinement: true
+
+# smoother_server:
+#   ros__parameters:
+#     use_sim_time: true
+#     smoother_plugins: ["simple_smoother"]
+#     simple_smoother:
+#       plugin: "nav2_smoother::SimpleSmoother"
+#       tolerance: 1.0e-10
+#       max_its: 1000
+#       do_refinement: True
+
+behavior_server:
+  ros__parameters:
+    use_sim_time: true
+    local_costmap_topic: local_costmap/costmap_raw
+    global_costmap_topic: global_costmap/costmap_raw
+    local_footprint_topic: local_costmap/published_footprint
+    global_footprint_topic: global_costmap/published_footprint
+    cycle_frequency: 10.0
+    behavior_plugins: ["spin", "backup", "drive_on_heading", "wait"]
+    spin:
+      plugin: "nav2_behaviors::Spin"
+    backup:
+      plugin: "nav2_behaviors::BackUp"
+    drive_on_heading:
+      plugin: "nav2_behaviors::DriveOnHeading"
+    wait:
+      plugin: "nav2_behaviors::Wait"
+    assisted_teleop:
+      plugin: "nav2_behaviors::AssistedTeleop"
+    local_frame: odom
+    global_frame: map
+    robot_base_frame: base_link
+    transform_tolerance: 0.1
+    simulate_ahead_time: 2.0
+    max_rotational_vel: 1.3
+    min_rotational_vel: 0.4
+    rotational_acc_lim: 3.2
+    enable_stamped_cmd_vel: true
+
+waypoint_follower:
+  ros__parameters:
+    use_sim_time: true
+    loop_rate: 20
+    stop_on_failure: false
+    action_server_result_timeout: 900.0
+    waypoint_task_executor_plugin: "wait_at_waypoint"
+    wait_at_waypoint:
+      plugin: "nav2_waypoint_follower::WaitAtWaypoint"
+      enabled: True
+      waypoint_pause_duration: 200
+
+velocity_smoother:
+  ros__parameters:
+    use_sim_time: true
+    smoothing_frequency: 20.0
+    scale_velocities: False
+    feedback: "OPEN_LOOP"
+    max_velocity: [1.5, 0.0, 1.5]
+    min_velocity: [-1.20, 0.0, -1.45]
+    max_accel: [1.30, 0.0, 1.5]
+    max_decel: [-1.50, 0.0, -1.5]
+    odom_topic: "/tricycle_controller/odom"
+    odom_duration: 0.1
+    deadband_velocity: [0.0, 0.0, 0.0]
+    velocity_timeout: 1.0
+    enable_stamped_cmd_vel: true
+
+collision_monitor:
+  ros__parameters:
+    use_sim_time: true
+    enabled: false
+    base_frame_id: "base_link"
+    odom_frame_id: "odom"
+    cmd_vel_in_topic: "cmd_vel_smoothed"
+    #cmd_vel_out_topic: "/cmd_vel"
+    cmd_vel_out_topic: "/tricycle_controller/cmd_vel"
+    enable_stamped_cmd_vel: true
+    state_topic: "collision_monitor_state"
+    transform_tolerance: 0.2
+    source_timeout: 1.0
+    base_shift_correction: True
+    stop_pub_timeout: 2.0
+    # Polygons represent zone around the robot for "stop", "slowdown" and "limit" action types,
+    # and robot footprint for "approach" action type.
+    polygons: ["FootprintApproach"]
+    FootprintApproach:
+      type: "polygon"
+      action_type: "approach"
+      footprint_topic: "local_costmap/published_footprint"
+      time_before_collision: 1.2
+      simulation_time_step: 0.1
+      min_points: 6
+      visualize: False
+      enabled: True
+    observation_sources: ["livox_low"]
+    # scan:
+    #   type: "scan"
+    #   topic: "scan"
+    #   min_height: 0.15
+    #   max_height: 2.0
+    #   enabled: True
+
+    livox_low:
+      type: "scan"
+      topic: "/livox/scan_low"
+      enabled: true
+
+    livox_middle:
+      type: "scan"
+      topic: "/livox/scan_middle"
+      enabled: true
+
+docking_server:
+  ros__parameters:
+    use_sim_time: true
+    controller_frequency: 15.0
+    initial_perception_timeout: 5.0
+    wait_charge_timeout: 5.0
+    dock_approach_timeout: 30.0
+    undock_linear_tolerance: 0.05
+    undock_angular_tolerance: 0.1
+    max_retries: 3
+    base_frame: "base_link"
+    fixed_frame: "odom"
+    dock_backwards: false
+    dock_prestaging_tolerance: 0.5
+
+    # Types of docks
+    dock_plugins: ['simple_charging_dock']
+    simple_charging_dock:
+      plugin: 'opennav_docking::SimpleChargingDock'
+      docking_threshold: 0.05
+      staging_x_offset: -0.7
+      use_external_detection_pose: true
+      use_battery_status: false # true
+      use_stall_detection: false # true
+
+      external_detection_timeout: 1.0
+      external_detection_translation_x: -0.18
+      external_detection_translation_y: 0.0
+      external_detection_rotation_roll: -1.57
+      external_detection_rotation_pitch: -1.57
+      external_detection_rotation_yaw: 0.0
+      filter_coef: 0.1
+
+    # Dock instances
+    # The following example illustrates configuring dock instances.
+    # docks: ['home_dock']  # Input your docks here
+    # home_dock:
+    #   type: 'simple_charging_dock'
+    #   frame: map
+    #   pose: [0.0, 0.0, 0.0]
+
+    controller:
+      k_phi: 3.0
+      k_delta: 2.0
+      v_linear_min: 0.15
+      v_linear_max: 0.15
+      use_collision_detection: false
+      costmap_topic: "/local_costmap/costmap_raw"
+      footprint_topic: "/local_costmap/published_footprint"
+      transform_tolerance: 0.1
+      projection_time: 5.0
+      simulation_step: 0.1
+      dock_collision_threshold: 0.3
+
+loopback_simulator:
+  ros__parameters:
+    base_frame_id: "base_link"
+    odom_frame_id: "odom"
+    map_frame_id: "map"
+    scan_frame_id: "base_scan"  # tb4_loopback_simulator.launch.py remaps to 'rplidar_link'
+    update_duration: 0.02
+    enable_stamped_cmd_vel: true
+
+route_server:
+  ros__parameters:
+    use_sim_time: true
+    base_frame: "base_link"
+    route_frame: "map"
+    path_density: 0.05
+    smooth_corners: true
+    smoothing_radius: 1.0
+    max_planning_time: 10.0
+
+    graph_filepath: "/home/asolovyev/navigation2_tutorials/sam_bot_description/graphs/test1.geojson"
+
+    planner_plugin: "DefaultRoutePlanner"
+    edge_cost_function: "DistanceScorer"
+
+    DefaultRoutePlanner:
+      plugin: "nav2_route::RoutePlanner"
+
+    DistanceScorer:
+      plugin: "nav2_route::DistanceScorer"

@@ -4,9 +4,9 @@
     
     <!-- Define some commonly used intertial properties  -->
         <!-- Define robot constants -->
-    <xacro:property name="base_width" value="0.9"/>
-    <xacro:property name="base_length" value="1.6"/>
-    <xacro:property name="base_height" value="1.5"/>
+    <xacro:property name="base_width" value="0.5"/>
+    <xacro:property name="base_length" value="1.0"/>
+    <xacro:property name="base_height" value="0.3"/>
     
     <xacro:macro name="box_inertia" params="m w h d">
       <inertial>
@@ -42,10 +42,10 @@
     
     <!-- BASE_LINK -->
     <link name="base_link">
-      <pose>0 0 0 0 0 3.1415</pose>
+      <pose>0.959 0.2 0.0 0 0 3.1415</pose>
       <inertial>
-        <pose>-0.8 0 0.3 0 0 0</pose>
-        <mass>2.6818</mass>
+        <pose>1.100 0.3 0.3 0 0 0</pose>
+        <mass>268.18</mass>
         <inertia>
           <ixx>13.364</ixx>
           <ixy>-0.64484</ixy>
@@ -56,19 +56,19 @@
         </inertia>
       </inertial>
       <visual name="base_link_visual">
-        <pose>0 0 0 0 0 3.1415</pose>
+        <pose>0.959 0.2 0.0 0 0 3.1415</pose>
         <geometry>
           <mesh>
             <uri>package://sam_bot_description/meshes/base_link.STL</uri>
           </mesh>
         </geometry>
         <material>
-          <ambient>0.498 0.498 0.498 1.0</ambient>
-          <diffuse>0.498 0.498 0.498 1.0</diffuse>
+          <ambient>0.8 0.0 0.0 1.0</ambient>
+          <diffuse>0.8 0.0 0.0 1.0</diffuse>
         </material>
       </visual>
       <collision name="base_link_collision">
-        <pose>0 0 0 0 0 3.1415</pose>
+        <pose>0.959 0.2 0.0 0 0 3.1415</pose>
         <geometry>
           <mesh>
             <uri>package://sam_bot_description/meshes/base_link.STL</uri>
@@ -86,14 +86,13 @@
     <joint name='base_joint' type='fixed'>
       <parent>base_link</parent>
       <child>base_footprint</child>
-      <pose relative_to="base_link">0.0 0.0 0.0 0 0 0</pose>
+      <pose relative_to="base_link">0.0 0.2 0.0 0 0 0</pose>
     </joint>
-
-
+    
     <!-- MAIN_WHEEL_ROTATE -->
     <link name="main_wheel_rotate">
       <!-- Координаты перенесены из джоинта URDF -->
-      <pose>-0.247 0.256 0.26 0 1.5708 0</pose>
+      <pose>-0.247 0.256 0.26 0 1.5708 3.14159</pose>
       <inertial>
         <pose>0.085452 3.0653e-08 0.00065214 0 0 0</pose>
         <mass>2.085</mass>
@@ -108,6 +107,7 @@
       </inertial>
       <visual name="main_wheel_rotate_visual">
         <geometry>
+          <pose>0 0 0 0 0 3.14159</pose>
           <mesh>
             <uri>package://sam_bot_description/meshes/Main_wheel_rotate.STL</uri>
           </mesh>
@@ -242,17 +242,25 @@
         <mass>1.0036</mass>
         <inertia>
           <ixx>0.00083453</ixx>
+          <ixy>-2.6606e-20</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00077387</iyy>
+          <iyz>-3.5515e-20</iyz>
+          <izz>0.00083453</izz>
+        </inertia>
+        <!-- <inertia>
+          <ixx>0.00083453</ixx>
           <ixy>-3.6133e-20</ixy>
           <ixz>0</ixz>
           <iyy>0.00077387</iyy>
           <iyz>-5.7684e-20</iyz>
           <izz>0.00083453</izz>
-        </inertia>
+        </inertia> -->
       </inertial>
       <visual name="roller_left1_visual">
         <geometry>
           <mesh>
-            <uri>package://sam_bot_description/meshes/roller_left1.STL</uri>
+            <uri>package://sam_bot_description/meshes/roller_left2.STL</uri>
           </mesh>
         </geometry>
         <material>
@@ -263,7 +271,7 @@
       <collision name="roller_left1_collision">
         <geometry>
           <mesh>
-            <uri>package://sam_bot_description/meshes/roller_left1.STL</uri>
+            <uri>package://sam_bot_description/meshes/roller_left2.STL</uri>
           </mesh>
         </geometry>
       </collision>
@@ -309,16 +317,24 @@
     <!-- ROLLER_RIGHT1 (Переднее правое) -->
     <link name="roller_right1">
       <!-- Из URDF J_roller_right1: xyz="0.914 -0.15 0.04" rpy="0 -1.3189 0" -->
-      <pose>0.914 -0.15 0.04 0 -1.3189 0</pose>
+      <pose>0.914 -0.15 0.04 0 -0.86611 0</pose>
       <inertial>
         <pose>0 -0.05 0 0 0 0</pose>
         <mass>1.0036</mass>
-        <inertia>
+        <!-- <inertia>
           <ixx>0.00083453</ixx>
           <ixy>-4.8676e-20</ixy>
           <ixz>0</ixz>
           <iyy>0.00077387</iyy>
           <iyz>-1.3168e-20</iyz>
+          <izz>0.00083453</izz>
+        </inertia> -->
+        <inertia>
+          <ixx>0.00083453</ixx>
+          <ixy>-2.6606e-20</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00077387</iyy>
+          <iyz>-3.5515e-20</iyz>
           <izz>0.00083453</izz>
         </inertia>
       </inertial>
@@ -345,18 +361,26 @@
     <!-- ROLLER_RIGHT2 (Заднее правое) -->
     <link name="roller_right2">
       <!-- Из URDF J_roller_right2: xyz="1.004 -0.15 0.04" rpy="-3.1416 -1.1236 3.1416" -->
-      <pose>1.004 -0.15 0.04 -3.1416 -1.1236 3.1416</pose>
+      <pose>1.004 -0.15 0.04 0 -0.86611 0</pose>
       <inertial>
         <pose>0 -0.05 0 0 0 0</pose>
         <mass>1.0036</mass>
         <inertia>
+          <ixx>0.00083453</ixx>
+          <ixy>-2.6606e-20</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00077387</iyy>
+          <iyz>-3.5515e-20</iyz>
+          <izz>0.00083453</izz>
+        </inertia>
+        <!-- <inertia>
           <ixx>0.00083453</ixx>
           <ixy>-4.8676e-20</ixy>
           <ixz>0</ixz>
           <iyy>0.00077387</iyy>
           <iyz>-1.3168e-20</iyz>
           <izz>0.00083453</izz>
-        </inertia>
+        </inertia> -->
       </inertial>
       <visual name="roller_right2_visual">
         <geometry>
@@ -378,6 +402,55 @@
       </collision>
     </link>
 
+     <!-- VILLAS (Виллы) -->
+    <link name="main_villas">
+      <!-- Из URDF J_roller_right2: xyz="1.004 -0.15 0.04" rpy="-3.1416 -1.1236 3.1416" -->
+      <pose>0.3 0 0 1.5708 0 3.14159</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>1.0036</mass>
+        <inertia>
+          <ixx>0.00083453</ixx>
+          <ixy>-2.6606e-20</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00077387</iyy>
+          <iyz>-3.5515e-20</iyz>
+          <izz>0.00083453</izz>
+        </inertia>
+      </inertial>
+      <visual name="main_villas_visual">
+        <geometry>
+          <mesh>
+            <uri>package://sam_bot_description/meshes/main_villas.STL</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>1.0 0.937 0.137 1.0</ambient>
+          <diffuse>1.0 0.937 0.137 1.0</diffuse>
+        </material>
+      </visual>
+      <collision name="main_villas_collision">
+        <geometry>
+          <mesh>
+            <uri>package://sam_bot_description/meshes/main_villas.STL</uri>
+          </mesh>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="J_main_villas" type="prismatic">
+      <parent>base_link</parent>
+      <child>main_villas</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.3</lower>
+          <upper>2.0</upper>
+          <effort>500</effort>
+          <velocity>2.2</velocity>
+        </limit>
+      </axis>
+    </joint>
     <!-- ==================== JOINTS ==================== -->
 
     <joint name="J_main_wheel_rotate" type="revolute">
@@ -386,10 +459,12 @@
       <axis>
         <xyz>-1 0 0</xyz>
         <limit>
-          <lower>-inf</lower>
-          <upper>inf</upper>
-          <effort>5000</effort> <!-- Увеличено усилие под массу погрузчика -->
-          <velocity>500</velocity>
+          <!-- <lower>-1.319</lower>
+          <upper>1.806</upper> -->
+          <lower>-1.806</lower>
+          <upper>1.806</upper>
+          <effort>500</effort> <!-- Увеличено усилие под массу погрузчика -->
+          <velocity>6.0</velocity>
         </limit>
       </axis>
     </joint>
@@ -489,7 +564,7 @@
     <joint name='imu_joint' type='fixed'>
       <parent>base_link</parent>
       <child>imu_link</child>
-      <pose relative_to="base_link">0.0 0.0 0.2 0 0 3.14</pose>
+      <pose relative_to="base_link">0.959 0.2 0.2 0 0 0</pose>
     </joint>
 
     <link name='imu_link'>
@@ -575,38 +650,43 @@
       </sensor>
     </link>
 
+
     <!-- ==================== PLUGIN ==================== -->
+    <ros2_control name="SamBotSystem" type="system">
 
-    <!-- Используем официальный доступный плагин AckermannSteering -->
-    <plugin filename="gz-sim-ackermann-steering-system" name="gz::sim::systems::AckermannSteering">
+      <hardware>
+        <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+      </hardware>
 
-      <left_steering_joint>J_balance_wheel_rotate</left_steering_joint>
-      <right_steering_joint>J_main_wheel_rotate</right_steering_joint>
+      <joint name="J_main_wheel">
+        <command_interface name="velocity"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
 
-      <left_joint>J_balance_wheel</left_joint>
-      <right_joint>J_main_wheel</right_joint>
+      <joint name="J_main_wheel_rotate">
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
 
-      <!-- Кинематические параметры погрузчика -->
-      <!-- Расстояние по оси X между передним ведущим колесом и задней пассивной осью -->
-      <wheel_base>1.2</wheel_base>
-      
-      <!-- Ширина колеи-->
-      <wheel_separation>0.6</wheel_separation>
+      <joint name="J_main_villas">
+        <command_interface name="position"/>
+        <command_interface name="velocity"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
 
-      <!-- Реальный радиус вашего ведущего колеса (Main Wheel) -->
-      <wheel_radius>0.060</wheel_radius>
+    </ros2_control>
 
-      <!-- Задаем максимальный угол поворота рулевого колеса -->
-      <steering_limit>1.9</steering_limit>
+    <plugin
+        filename="gz_ros2_control-system"
+        name="gz_ros2_control::GazeboSimROS2ControlPlugin">
 
-      <!-- Настройка топиков: Должны строго совпадать с вашим ros_gz_bridge -->
-      <topic>/demo/cmd_vel</topic>
-      <odom_topic>/demo/odom</odom_topic>
-      <tf_topic>/tf</tf_topic>
+      <parameters>
+        sam_bot_description/config/controllers.yaml
+      </parameters>
 
-      <!-- Координатные фреймы для публикации одометрии -->
-      <frame_id>odom</frame_id>
-      <child_frame_id>base_link</child_frame_id>
     </plugin>
 
     <plugin
@@ -614,14 +694,14 @@
       name="gz::sim::systems::JointStatePublisher">
       <topic>joint_states</topic>
     </plugin>
-
-    <joint name="lidar_joint" type="fixed">
+    
+    <!-- <joint name="lidar_joint" type="fixed">
       <parent>base_link</parent>
       <child>lidar_link</child>
-      <pose relative_to="base_link">0.073 0.0 1.698 0 0 0</pose>
-    </joint>
+      <pose relative_to="base_link">1.032 0.2 1.698 0 0 0</pose>
+    </joint> -->
 
-    <link name='lidar_link'>
+    <!-- <link name='lidar_link'>
       <pose relative_to="lidar_joint"/>
       <visual name="lidar_link_visual">
         <geometry>
@@ -670,12 +750,12 @@
           </noise>
         </ray>
       </sensor>
-    </link>
+    </link> -->
 
     <joint name="front_camera_joint" type="fixed">
       <parent>base_link</parent>
       <child>front_camera_link</child>
-      <pose relative_to="base_link">0.117 0 1.56 0 0.261799 0</pose>
+      <pose relative_to="base_link">1.076 0.2 1.56 0 0.261799 0</pose>
     </joint>
 
     <link name='front_camera_link'>
@@ -735,7 +815,7 @@
     <joint name="rear_camera_joint" type="fixed">
       <parent>base_link</parent>
       <child>rear_camera_link</child>
-      <pose relative_to="base_link">-0.118 0.332 0.516 1.57 0 3.14</pose>
+      <pose relative_to="base_link">0.842 0.532 0.516 1.57 0 3.14</pose>
     </joint>
 
     <link name='rear_camera_link'>
@@ -796,7 +876,7 @@
       <parent>base_link</parent>
       <child>livox_link</child>
       <!-- Размещаем его, например, на высоте 1.75 метра по центру робота -->
-      <pose relative_to="base_link">0.0 0.0 1.75 0 0 0</pose>
+      <pose relative_to="base_link">0.959 0.2 1.75 0 0 0</pose>
     </joint>
 
     <link name='livox_link'>

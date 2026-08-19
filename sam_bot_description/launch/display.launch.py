@@ -10,21 +10,31 @@ from ros_gz_bridge.actions import RosGzBridge
 from ros_gz_sim.actions import GzServer
 from launch.conditions import IfCondition, UnlessCondition
 from launch_ros.parameter_descriptions import ParameterValue
-
+from launch.actions import ExecuteProcess
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
     pkg_share = get_package_share_directory('sam_bot_description')
     ros_gz_sim_share = get_package_share_directory('ros_gz_sim')
     gz_spawn_model_launch_source = os.path.join(ros_gz_sim_share, "launch", "gz_spawn_model.launch.py")
-    default_model_path = os.path.join(pkg_share, 'src', 'description', 'sam_bot_descriprion_v2_revers.sdf')
+    default_model_path = os.path.join(pkg_share, 'src', 'description', 'sam_bot_descriprion_v2_revers_rear_base_link.sdf')
     default_rviz_config_path = os.path.join(pkg_share, 'rviz', 'config.rviz')
     world_path = os.path.join(pkg_share, 'world', 'warehouse.sdf')
     bridge_config_path = os.path.join(pkg_share, 'config', 'bridge_config.yaml')
 
     # Путь к пакету навигации Nav2
     nav2_bringup_share = get_package_share_directory('nav2_bringup')
-    # ИСПРАВЛЕНО: Путь к вашему файлу параметров nav2_params.yaml
+    #Определение папки для СЛАМ
+    slam_toolbox_share = get_package_share_directory('slam_toolbox')
+    #Путь к вашему файлу параметров nav2_params
     default_nav2_params_path = os.path.join(pkg_share, 'config', 'nav2_params.yaml')
+    #Livox condif
+    livox_laserscan_config = os.path.join(pkg_share, 'config', 'livox_laserscan.yaml')
+    #Save map
+    default_map_path = os.path.join(pkg_share,'maps','my_map1.yaml')
+    #Graph
+    graph_filepath = os.path.join(pkg_share,'graphs','route.geojson')
 
     robot_state_publisher_node = Node(
         package='robot_state_publisher',
@@ -47,13 +57,15 @@ def generate_launch_description():
     #     executable='robot_state_publisher',
     #     parameters=[{'robot_description': Command(['xacro ', LaunchConfiguration('model')])}, {'use_sim_time': LaunchConfiguration('use_sim_time')}]
     # )
+
     # joint_state_publisher_node = Node(
     #     package='joint_state_publisher',
     #     executable='joint_state_publisher',
     #     name='joint_state_publisher',
     #     parameters=[{'robot_description': Command(['xacro ', default_model_path])}],
     #     condition=UnlessCondition(LaunchConfiguration('gui'))
-    # )
+    #)
+
     # joint_state_publisher_gui_node = Node(
     #     package='joint_state_publisher_gui',
     #     executable='joint_state_publisher_gui',
@@ -126,11 +138,34 @@ def generate_launch_description():
             'world': 'warehouse',
             'topic': '/robot_description',
             'entity_name': 'sam_bot',
+            'x': '1.0',
+            'y': '1.0',
             'z': '0.65',
             # 'yaw': '3.14159',
         }.items(),
     )
 
+    joint_state_broadcaster_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["joint_state_broadcaster"],
+        output="screen",
+    )
+
+    tricycle_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["tricycle_controller"],
+        output="screen",
+    )
+
+    fork_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["fork_controller"],
+        output="screen",
+    )
+    
     livox_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -147,7 +182,66 @@ def generate_launch_description():
         parameters=[os.path.join(pkg_share, 'config/ekf.yaml'), {'use_sim_time': LaunchConfiguration('use_sim_time')}],
     )
 
-    # ИСПРАВЛЕНО: Включение официального запуска навигации Nav2 с вашими параметрами
+    livox_scan_low = Node(
+        package='pointcloud_to_laserscan',
+        executable='pointcloud_to_laserscan_node',
+        name='livox_scan_low',
+        output='screen',
+        parameters=[livox_laserscan_config],
+        remappings=[
+            ('cloud_in', '/livox/points'),
+            ('scan', '/livox/scan_low'),
+        ],
+    )
+
+    livox_scan_middle = Node(
+        package='pointcloud_to_laserscan',
+        executable='pointcloud_to_laserscan_node',
+        name='livox_scan_middle',
+        output='screen',
+        parameters=[livox_laserscan_config],
+        remappings=[
+            ('cloud_in', '/livox/points'),
+            ('scan', '/livox/scan_middle'),
+        ],
+    )
+
+    livox_scan_high = Node(
+        package='pointcloud_to_laserscan',
+        executable='pointcloud_to_laserscan_node',
+        name='livox_scan_high',
+        output='screen',
+        parameters=[livox_laserscan_config],
+        remappings=[
+            ('cloud_in', '/livox/points'),
+            ('scan', '/livox/scan_high'),
+        ],
+    )
+
+    slam_toolbox_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                slam_toolbox_share,
+                'launch',
+                'online_async_launch.py'
+            )
+        ),
+        launch_arguments={
+            'use_sim_time': LaunchConfiguration('use_sim_time')
+        }.items()
+    )
+
+    initial_pose = ExecuteProcess(
+        cmd=[
+            'ros2', 'topic', 'pub', '--once',
+            '/initialpose',
+            'geometry_msgs/msg/PoseWithCovarianceStamped',
+            '{header: {frame_id: map}, pose: {pose: {position: {x: 0, y: 0, z: 0.0}, orientation: {z: 0.0, w: 1.0}}}}'
+        ],
+        shell=False
+    )
+
+    #Включение официального запуска навигации Nav2 с вашими параметрами
     nav2_navigation_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(nav2_bringup_share, 'launch', 'navigation_launch.py')
@@ -159,8 +253,22 @@ def generate_launch_description():
         }.items()
     )
 
+    nav2_bringup_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                nav2_bringup_share, 'launch', 'bringup_launch.py')
+        ),
+        launch_arguments={
+            'map': default_map_path,
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'params_file': LaunchConfiguration('nav2_params'),
+            'graph' : graph_filepath,
+            'autostart': 'true'
+        }.items()
+    )
+
     return LaunchDescription([
-        # DeclareLaunchArgument(name='gui', default_value='True', description='Flag to enable joint_state_publisher_gui'),
+        DeclareLaunchArgument(name='gui', default_value='True', description='Flag to enable joint_state_publisher_gui'),
         DeclareLaunchArgument(name='model', default_value=default_model_path, description='Absolute path to robot model file'),
         DeclareLaunchArgument(name='rvizconfig', default_value=default_rviz_config_path, description='Absolute path to rviz config file'),
         DeclareLaunchArgument(name='use_sim_time', default_value='True', description='Flag to enable use_sim_time'),
@@ -180,10 +288,27 @@ def generate_launch_description():
         rear_camera_bridge_image,
         rear_camera_bridge_depth,
         spawn_entity,
-        livox_bridge,
+        #livox_bridge,
         robot_localization_node,
+
+        #ROS2 Controller 
+        joint_state_broadcaster_spawner,
+        tricycle_controller_spawner,
+        fork_controller_spawner,
+
+        #Livox
+        livox_scan_high,
+        livox_scan_low,
+        livox_scan_middle,
+
+
+        # SLAM NAV2
+        #slam_toolbox_launch,
+        #nav2_navigation_launch,
+
+
+        # NAV2 MAP
+        initial_pose,
+        nav2_bringup_launch,
         
-        
-        # Запуск группы узлов Nav2
-        # nav2_navigation_launch
     ])

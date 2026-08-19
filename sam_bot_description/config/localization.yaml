@@ -1,8 +1,0 @@
-slam_toolbox:
-  ros__parameters:
-    use_sim_time: true
-    mode: localization
-    # Укажите абсолютный или относительный путь к файлу карты БЕЗ расширения (.yaml/.pgm)
-    map_file_name: /home/asolovyev/navigation2_tutorials/sam_bot_description/maps/map_v1
-    
-    map_start_pose: [0.0, 0.0, 0.0]

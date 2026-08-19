@@ -77,7 +77,7 @@
         https://fuel.gazebosim.org/1.0/MovAi/models/shelf_big
       </uri>
       <name>shelf_big_0</name>
-      <pose>-8.5 -13 0 0 -0 0</pose>
+      <pose>0 -13 0 0 -0 0</pose>
     </include>
     <include>
       <uri>
@@ -91,7 +91,35 @@
         https://fuel.gazebosim.org/1.0/MovAi/models/shelf_big
       </uri>
       <name>shelf_big_2</name>
-      <pose>-1.5 -13 0 0 -0 0</pose>
+      <pose>3.25 -13 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>
+        https://fuel.gazebosim.org/1.0/MovAi/models/shelf_big
+      </uri>
+      <name>shelf_big_11</name>
+      <pose>-3.25 -13 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>
+        https://fuel.gazebosim.org/1.0/MovAi/models/shelf_big
+      </uri>
+      <name>shelf_big_12</name>
+      <pose>-6.5 -13 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>
+        https://fuel.gazebosim.org/1.0/MovAi/models/shelf_big
+      </uri>
+      <name>shelf_big_13</name>
+      <pose>-9.75 -13 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>
+        https://fuel.gazebosim.org/1.0/MovAi/models/shelf_big
+      </uri>
+      <name>shelf_big_14</name>
+      <pose>-13 -13 0 0 -0 0</pose>
     </include>
     <include>
       <uri>
