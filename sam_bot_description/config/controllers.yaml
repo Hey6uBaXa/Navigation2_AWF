@@ -64,4 +64,5 @@ fork_controller:
   ros__parameters:
     joints:
       - J_main_villas
+      - J_second_villas
     interface_name: position

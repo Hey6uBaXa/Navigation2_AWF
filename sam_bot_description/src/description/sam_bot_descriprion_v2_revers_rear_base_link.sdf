@@ -405,7 +405,7 @@
      <!-- VILLAS (Виллы) -->
     <link name="main_villas">
       <!-- Из URDF J_roller_right2: xyz="1.004 -0.15 0.04" rpy="-3.1416 -1.1236 3.1416" -->
-      <pose>0.3 0 0 1.5708 0 3.14159</pose>
+      <pose>0.2 0 0.1 1.5708 0 3.14159</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>1.0036</mass>
@@ -439,13 +439,63 @@
     </link>
 
     <joint name="J_main_villas" type="prismatic">
-      <parent>base_link</parent>
+      <parent>second_villas</parent>
       <child>main_villas</child>
       <axis>
         <xyz>0 1 0</xyz>
         <limit>
-          <lower>-0.3</lower>
-          <upper>2.0</upper>
+          <lower>-0.1</lower>
+          <upper>1.0</upper>
+          <effort>500</effort>
+          <velocity>2.2</velocity>
+        </limit>
+      </axis>
+    </joint>
+
+     <!-- SECOND SECTION (Вторая секция) -->
+    <link name="second_villas">
+      <!-- Из URDF J_roller_right2: xyz="1.004 -0.15 0.04" rpy="-3.1416 -1.1236 3.1416" -->
+      <pose>0.05 0 0.14 1.5708 1.5708 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>1.0036</mass>
+        <inertia>
+          <ixx>0.00083453</ixx>
+          <ixy>-2.6606e-20</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00077387</iyy>
+          <iyz>-3.5515e-20</iyz>
+          <izz>0.00083453</izz>
+        </inertia>
+      </inertial>
+      <visual name="second_villas_visual">
+        <geometry>
+          <mesh>
+            <uri>package://sam_bot_description/meshes/second_section.STL</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>1.0 0.937 0.137 1.0</ambient>
+          <diffuse>1.0 0.937 0.137 1.0</diffuse>
+        </material>
+      </visual>
+      <collision name="second_villas_collision">
+        <geometry>
+          <mesh>
+            <uri>package://sam_bot_description/meshes/second_section.STL</uri>
+          </mesh>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="J_second_villas" type="prismatic">
+      <parent>base_link</parent>
+      <child>second_villas</child>
+      <axis>
+        <xyz>-1 0 0</xyz>
+        <limit>
+          <lower>-0.1</lower>
+          <upper>1.0</upper>
           <effort>500</effort>
           <velocity>2.2</velocity>
         </limit>
@@ -673,6 +723,12 @@
       <joint name="J_main_villas">
         <command_interface name="position"/>
         <command_interface name="velocity"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+      
+      <joint name="J_second_villas">
+        <command_interface name="position"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>
       </joint>

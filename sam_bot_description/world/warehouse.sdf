@@ -283,5 +283,36 @@
       <pose>-12 15 0 0 0 0</pose>
     </include>
 
+    <model name="euro_pallet">
+      <pose>5 3 1 0 0 0</pose>
+      <link name="link">
+
+        <inertial>
+          <mass>20</mass>
+        </inertial>
+
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>package://sam_bot_description/meshes/euro_pallet.stl</uri>
+            </mesh>
+          </geometry>
+        </collision>
+
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>package://sam_bot_description/meshes/euro_pallet.stl</uri>
+            </mesh>
+          </geometry>
+          <material>
+            <ambient>0.3 0.3 0.3 1</ambient>
+            <diffuse>0.7 0.2 0.2 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
   </world>
 </sdf>
