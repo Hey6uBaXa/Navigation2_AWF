@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+
+<package format="3">
+
+  <name>avf_15_hardware</name>
+  <version>0.0.1</version>
+
+  <description>
+    ros2_control hardware interface for AVF-15.
+  </description>
+
+  <maintainer email="asolovyev@example.com">
+    Andrey Solovyev
+  </maintainer>
+
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>hardware_interface</depend>
+  <depend>pluginlib</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+
+</package>

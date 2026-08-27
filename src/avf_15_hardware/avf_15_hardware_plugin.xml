@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+
+<library path="avf_15_hardware">
+
+  <class
+    name="avf_15_hardware/AVF15SystemHardware"
+    type="avf_15_hardware::AVF15SystemHardware"
+    base_class_type="hardware_interface::SystemInterface">
+
+    <description>
+      ros2_control hardware interface for the AVF-15 traction,
+      steering and fork actuator system.
+    </description>
+
+  </class>
+
+</library>

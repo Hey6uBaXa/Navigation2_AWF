@@ -1,0 +1,20 @@
+<class_libraries>
+  <library path="avf_15_pallet_bt_plugins">
+    <class name="avf_15_pallet_bt_plugins::SetForkPositionAction"
+           base_class_type="BT::TreeNode">
+      <description>Commands fork_controller and waits for target position</description>
+    </class>
+    <class name="avf_15_pallet_bt_plugins::GetPalletPoseAction"
+           base_class_type="BT::TreeNode">
+      <description>Reads latest detected pallet pose onto the blackboard</description>
+    </class>
+    <class name="avf_15_pallet_bt_plugins::DockAtPalletAction"
+           base_class_type="BT::TreeNode">
+      <description>Calls opennav_docking DockRobot action for pallet docking</description>
+    </class>
+    <class name="avf_15_pallet_bt_plugins::UndockFromPalletAction"
+           base_class_type="BT::TreeNode">
+      <description>Calls opennav_docking UndockRobot action to back out of the pallet</description>
+    </class>
+  </library>
+</class_libraries>

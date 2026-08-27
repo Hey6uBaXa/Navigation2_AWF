@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<root BTCPP_format="4" main_tree_to_execute="PickPallet">
+  <BehaviorTree ID="PickPallet">
+    <PipelineSequence name="pick_pallet_root">
+
+      <!-- 1. Coarse approach: Nav2 drives to the staging pose in front
+           of the (roughly known / previously localized) pallet.
+           staging_pose must be populated on the blackboard beforehand
+           (e.g. from a task server / pallet location DB), oriented so
+           that dock_backwards in docking_server matches your mount. -->
+      <RecoveryNode number_of_retries="3" name="navigate_to_staging">
+        <NavigateToPose goal="{staging_pose}"/>
+        <ReactiveFallback name="staging_recovery">
+          <GoalUpdated/>
+          <RoundRobin>
+            <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+            <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
+          </RoundRobin>
+        </ReactiveFallback>
+      </RecoveryNode>
+
+      <!-- 2. Lower forks to insertion height before the final approach -->
+      <RetryUntilSuccessful num_attempts="2" name="lower_forks">
+        <SetForkPosition main_villas_pos="0.55"
+                          second_villas_pos="0.08"
+                          tolerance="0.01"
+                          timeout="8.0"/>
+      </RetryUntilSuccessful>
+
+      <!-- 3. Confirm we can see the pallet opening before committing -->
+      <RetryUntilSuccessful num_attempts="10" name="acquire_pallet">
+        <GetPalletPose pose_topic="/pallet_detector/dock_pose"
+                        max_age="1.0"
+                        pose="{pallet_pose}"/>
+      </RetryUntilSuccessful>
+
+      <!-- 4. Precise final approach + insertion, driven by docking_server
+           using the continuously-refined external detection pose.
+           docking_server must have a "pallet_dock" dock_type configured
+           (see nav2_params.yaml addition below), dock_backwards: true
+           since the forks are mounted at the rear of base_link. -->
+      <RecoveryNode number_of_retries="2" name="dock_at_pallet">
+        <DockAtPallet dock_pose="{pallet_pose}"
+                       dock_type="pallet_dock"
+                       max_staging_time="30.0"/>
+        <SetForkPosition main_villas_pos="0.55"
+                          second_villas_pos="0.08"
+                          tolerance="0.02"
+                          timeout="3.0"/>
+      </RecoveryNode>
+
+      <!-- 5. Lift forks: pallet is now on the forks -->
+      <RetryUntilSuccessful num_attempts="2" name="lift_forks">
+        <SetForkPosition main_villas_pos="0.85"
+                          second_villas_pos="0.08"
+                          tolerance="0.01"
+                          timeout="8.0"/>
+      </RetryUntilSuccessful>
+
+      <!-- 6. Back straight out of the pallet -->
+      <RecoveryNode number_of_retries="2" name="undock_from_pallet">
+        <UndockFromPallet dock_type="pallet_dock" max_undocking_time="20.0"/>
+        <AlwaysSuccess/>
+      </RecoveryNode>
+
+      <!-- 7. Resume Nav2 to the drop-off pose. Increase footprint/inflation
+           for the loaded state beforehand if the loaded footprint differs. -->
+      <RecoveryNode number_of_retries="3" name="navigate_to_dropoff">
+        <NavigateToPose goal="{dropoff_pose}"/>
+        <ReactiveFallback name="dropoff_recovery">
+          <GoalUpdated/>
+          <RoundRobin>
+            <ClearEntireCostmap name="ClearLocalCostmap-Context2" service_name="local_costmap/clear_entirely_local_costmap"/>
+            <ClearEntireCostmap name="ClearGlobalCostmap-Context2" service_name="global_costmap/clear_entirely_global_costmap"/>
+          </RoundRobin>
+        </ReactiveFallback>
+      </RecoveryNode>
+
+      <!-- 8. Lower forks again to place the pallet -->
+      <RetryUntilSuccessful num_attempts="2" name="lower_forks_dropoff">
+        <SetForkPosition main_villas_pos="0.55"
+                          second_villas_pos="0.08"
+                          tolerance="0.01"
+                          timeout="8.0"/>
+      </RetryUntilSuccessful>
+
+    </PipelineSequence>
+  </BehaviorTree>
+</root>
