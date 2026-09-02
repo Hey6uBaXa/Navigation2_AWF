@@ -6,7 +6,7 @@ amcl:
     alpha4: 0.35
     alpha5: 0.2
     use_sim_time: true
-    base_frame_id: base_link
+    base_frame_id: "base_link"
     beam_skip_distance: 0.5
     beam_skip_error_threshold: 0.9
     beam_skip_threshold: 0.3
@@ -21,6 +21,7 @@ amcl:
     max_particles: 5000
     min_particles: 1000
     odom_frame_id: "odom"
+    map_topic: /map
     pf_err: 0.05
     pf_z: 0.99
     recovery_alpha_fast: 0.0
@@ -38,7 +39,7 @@ amcl:
     z_max: 0.05
     z_rand: 0.2
     z_short: 0.05
-    scan_topic: /livox/scan_low
+    scan_topic: <robot_namespace>/livox/scan_low
     set_initial_pose: true
     initial_pose:
       x: 1.0
@@ -51,12 +52,11 @@ bt_navigator:
     use_sim_time: true
     global_frame: map
     robot_base_frame: base_link
-    odom_topic: /odometry/filtered
+    odom_topic: "<robot_namespace>/tricycle_controller/odom"
     bt_loop_duration: 10
     default_server_timeout: 20
     wait_for_service_timeout: 1000
     action_server_result_timeout: 900.0
-    default_nav_to_pose_bt_xml: "/home/asolovyev/navigation2_tutorials/avf_15/behavior_trees/navigate_w_recovery_and_replanning_only_if_path_becomes_invalid.xml"
     navigators: ["navigate_to_pose", "navigate_through_poses"]
     navigate_to_pose:
       plugin: "nav2_bt_navigator::NavigateToPoseNavigator"
@@ -97,14 +97,14 @@ controller_server:
     progress_checker_plugins: ["progress_checker"]
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"   general_goal_checker
     controller_plugins: ["FollowPath"]
-    odom_topic: /odometry/filtered
+    odom_topic: <robot_namespace>/odometry/filtered
     use_realtime_priority: false
     enable_stamped_cmd_vel: true
 
     # Progress checker parameters
     progress_checker:
       plugin: "nav2_controller::SimpleProgressChecker"
-      required_movement_radius: 0.10
+      required_movement_radius: 0.05
       movement_time_allowance: 20.0
     # Goal checker parameters
     #precise_goal_checker:
@@ -124,13 +124,13 @@ controller_server:
       # Основная скорость
       # =========================
 
-      max_linear_vel: 0.3
+      desired_linear_vel: 0.6
 
       # =========================
       # Lookahead
       # =========================
 
-      lookahead_dist: 0.75
+      lookahead_dist: 0.8
       min_lookahead_dist: 0.5
       max_lookahead_dist: 1.5
       lookahead_time: 0.8
@@ -141,7 +141,7 @@ controller_server:
       # =========================
 
       use_regulated_linear_velocity_scaling: true
-      regulated_linear_scaling_min_radius: 1.4
+      regulated_linear_scaling_min_radius: 0.4
       regulated_linear_scaling_min_speed: 0.04
 
       # =========================
@@ -149,8 +149,8 @@ controller_server:
       # =========================
 
       use_cost_regulated_linear_velocity_scaling: true
-      cost_scaling_dist: 0.1
-      cost_scaling_gain: 0.1
+      cost_scaling_dist: 0.4
+      cost_scaling_gain: 0.3
 
       # Должен совпадать с inflation_layer.cost_scaling_factor
       inflation_cost_scaling_factor: 1.2
@@ -207,91 +207,50 @@ local_costmap:
     ros__parameters:
       use_sim_time: true
       update_frequency: 10.0
-      publish_frequency: 1.0
+      publish_frequency: 5.0
       global_frame: odom
-      robot_base_frame: base_footprint
+      robot_base_frame: base_link
       rolling_window: true
-      width: 10
-      height: 10
+      map_topic: /map
+      width: 40
+      height: 40
       resolution: 0.05
-      footprint: "[
-        [1.40, 0.30],
-        [1.40, -0.30],
-        [-0.15, -0.30],
-        [-0.15, 0.30]
-      ]"
       # footprint: "[
-      #   [1.40, 0.55],
-      #   [1.40, -0.15],
-      #   [-0.30, -0.15],
-      #   [-0.30, 0.55]
+      #   [0.55, 0.50],
+      #   [0.55, -0.50],
+      #   [-1.50, -0.50],
+      #   [-1.50, 0.50]
       # ]"
+      footprint: "[
+        [-0.13, 0.50],
+        [-0.13, -0.10],
+        [1.40, -0.20],
+        [1.40, 0.60]
+      ]"
       #plugins: ["voxel_layer", "inflation_layer", "obstacle_layer"]
-      plugins: ["obstacle_layer", "voxel_layer", "inflation_layer"]
+      plugins: ["obstacle_layer", "inflation_layer", "voxel_layer"]
 
-      obstacle_layer:
-        plugin: "nav2_costmap_2d::ObstacleLayer"
-        enabled: true  
-        footprint_clearing_enabled: true
-        observation_sources: livox_low livox_middle
-        livox_low:
-          topic: /livox/scan_low
-          data_type: LaserScan
-          clearing: true
-          marking: true
-          observation_persistence: 0.2
-          expected_update_rate: 0.0
-          obstacle_min_range: 0.2
-          obstacle_max_range: 5.0
-          raytrace_min_range: 0.2
-          raytrace_max_range: 6.0
-          inf_is_valid: true
-
-        livox_middle:
-          topic: /livox/scan_middle
-          data_type: LaserScan
-          clearing: true
-          marking: true
-          observation_persistence: 0.2
-          expected_update_rate: 0.0
-          obstacle_min_range: 0.2
-          obstacle_max_range: 5.0
-          raytrace_min_range: 0.2
-          raytrace_max_range: 6.0
-          inf_is_valid: true
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        cost_scaling_factor: 4.0
+        inflation_radius: 1.6
 
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: True
-        footprint_clearing_enabled: true
         publish_voxel_map: True
         origin_z: 0.0
         z_resolution: 0.20
         z_voxels: 16
         max_obstacle_height: 3.0
         mark_threshold: 0
-        observation_sources: livox_cloud
+        observation_sources: livox_low livox_middle
         # 0. 2D LiDAR
-        # scan:
-        #   # A relative topic will be appended to the parent of the local_costmap namespace.
-        #   # For example:
-        #   #   * User chosen namespace is `tb4`.
-        #   #   * User chosen topic is `scan`.
-        #   #   * Topic will be remapped to `/tb4/scan` without `local_costmap`.
-        #   #   * Use global topic `/scan` if you do not wish the node namespace to apply
-        #   topic: scan
-        #   max_obstacle_height: 2.0
-        #   clearing: false
-        #   marking: true
-        #   data_type: "LaserScan"
-        #   raytrace_max_range: 3.0
-        #   raytrace_min_range: 0.0
-        #   obstacle_max_range: 2.5
-        #   obstacle_min_range: 0.0
+
 
         # 1. 3D LiDAR Livox Mid-360
         livox_cloud:
-          topic: /livox/points      # Проверьте имя вашего топика (может быть /livox/points)
+          topic: <robot_namespace>/livox/points      # Проверьте имя вашего топика (может быть /livox/points)
           data_type: "PointCloud2"
           min_obstacle_height: 0.1   # Игнорируем отражения от пола
           max_obstacle_height: 2.0   # Препятствия выше робота не учитываем
@@ -304,7 +263,7 @@ local_costmap:
 
         # 2. Передняя камера глубины
         front_camera:
-          topic: /front_depth_camera/points  # Укажите ваш топик PointCloud2 передней камеры
+          topic: <robot_namespace>/front_depth_camera/points  # Укажите ваш топик PointCloud2 передней камеры
           data_type: "PointCloud2"
           min_obstacle_height: 0.15  # Отсекаем шум пола и блики
           max_obstacle_height: 2.0
@@ -317,7 +276,7 @@ local_costmap:
 
         # 3. Задняя камера глубины (чтобы не врезаться при движении назад/разворотах)
         back_camera:
-          topic: /rear_depth_camera/points   # Укажите ваш топик PointCloud2 задней камеры
+          topic: <robot_namespace>/rear_depth_camera/points   # Укажите ваш топик PointCloud2 задней камеры
           data_type: "PointCloud2"
           min_obstacle_height: 0.15
           max_obstacle_height: 2.0
@@ -329,7 +288,7 @@ local_costmap:
           marking: true
 
         livox_low:
-          topic: /livox/scan_low
+          topic: <robot_namespace>/livox/scan_low
           data_type: LaserScan
           clearing: true
           marking: true
@@ -342,7 +301,7 @@ local_costmap:
           inf_is_valid: true
 
         livox_middle:
-          topic: /livox/scan_middle
+          topic: <robot_namespace>/livox/scan_middle
           data_type: LaserScan
           clearing: true
           marking: true
@@ -355,7 +314,7 @@ local_costmap:
           inf_is_valid: false
 
         livox_high:
-          topic: /livox/scan_high
+          topic: <robot_namespace>/livox/scan_high
           data_type: LaserScan
           clearing: true
           marking: true
@@ -366,13 +325,36 @@ local_costmap:
           raytrace_min_range: 0.2
           raytrace_max_range: 8.0
           inf_is_valid: false
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: true  
+        observation_sources: livox_low 
+        livox_low:
+          topic: <robot_namespace>/livox/scan_low
+          data_type: LaserScan
+          clearing: true
+          marking: true
+          observation_persistence: 0.0
+          expected_update_rate: 0.0
+          obstacle_min_range: 0.2
+          obstacle_max_range: 5.0
+          raytrace_min_range: 0.2
+          raytrace_max_range: 6.0
+          inf_is_valid: true
 
-      inflation_layer:
-        plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 1.2
-        footprint_clearing_enabled: true
-        inflation_radius: 1.60   
-        
+        livox_middle:
+          topic: <robot_namespace>/livox/scan_middle
+          data_type: LaserScan
+          clearing: true
+          marking: true
+          observation_persistence: 0.2
+          expected_update_rate: 0.0
+          obstacle_min_range: 0.2
+          obstacle_max_range: 5.0
+          raytrace_min_range: 0.2
+          raytrace_max_range: 6.0
+          inf_is_valid: true
+          
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: true
@@ -385,18 +367,19 @@ global_costmap:
       update_frequency: 5.0
       publish_frequency: 2.0
       global_frame: map
-      robot_base_frame: base_footprint
+      map_topic: /map
+      robot_base_frame: base_link
       # footprint: "[
-      #   [1.40, 0.55],
-      #   [1.40, -0.15],
-      #   [-0.30, -0.15],
-      #   [-0.30, 0.55]
+      #   [0.55, 0.50],
+      #   [0.55, -0.50],
+      #   [-1.50, -0.50],
+      #   [-1.50, 0.50]
       # ]"
       footprint: "[
-        [1.40, 0.30],
+        [-0.13, 0.50],
+        [-0.13, -0.10],
         [1.40, -0.30],
-        [-0.15, -0.30],
-        [-0.15, 0.30]
+        [1.40, 0.60]
       ]"
       resolution: 0.05
       track_unknown_space: true
@@ -404,27 +387,11 @@ global_costmap:
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
-        observation_sources: livox_low livox_middle
-        footprint_clearing_enabled: true
-        # scan:
-        #   # A relative topic will be appended to the parent of the global_costmap namespace.
-        #   # For example:
-        #   #   * User chosen namespace is `tb4`.
-        #   #   * User chosen topic is `scan`.
-        #   #   * Topic will be remapped to `/tb4/scan` without `global_costmap`.
-        #   #   * Use global topic `/scan` if you do not wish the node namespace to apply
-        #   topic: scan
-        #   max_obstacle_height: 2.0
-        #   clearing: True
-        #   marking: True
-        #   data_type: "LaserScan"
-        #   raytrace_max_range: 3.0
-        #   raytrace_min_range: 0.0
-        #   obstacle_max_range: 2.5
-        #   obstacle_min_range: 0.0
+        observation_sources: livox_low
+
 
         livox:
-          topic: /livox/points 
+          topic: <robot_namespace>/livox/points 
           data_type: "PointCloud2"
           marking: True
           clearing: True
@@ -436,11 +403,11 @@ global_costmap:
           min_obstacle_height: 0.05
 
         livox_low:
-          topic: /livox/scan_low
+          topic: <robot_namespace>/livox/scan_low
           data_type: LaserScan
           clearing: true
           marking: true
-          observation_persistence: 0.2
+          observation_persistence: 5.0
           expected_update_rate: 0.0
           obstacle_min_range: 0.2
           obstacle_max_range: 7.0
@@ -449,11 +416,11 @@ global_costmap:
           inf_is_valid: true
 
         livox_middle:
-          topic: /livox/scan_middle
+          topic: <robot_namespace>/livox/scan_middle
           data_type: LaserScan
           clearing: true
           marking: true
-          observation_persistence: 0.2
+          observation_persistence: 5.0
           expected_update_rate: 0.0
           obstacle_min_range: 0.2
           obstacle_max_range: 7.0
@@ -462,7 +429,7 @@ global_costmap:
           inf_is_valid: false
 
         livox_high:
-          topic: /livox/scan_high
+          topic: <robot_namespace>/livox/scan_high
           data_type: LaserScan
           clearing: false
           marking: true
@@ -477,11 +444,13 @@ global_costmap:
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
+        map_topic: /map
 
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 1.2
-        inflation_radius: 1.60
+        cost_scaling_factor: 4.0
+        inflation_radius: 1.6
+        topic_name: /map
       always_send_full_costmap: True
 
 slam_toolbox:
@@ -490,7 +459,7 @@ slam_toolbox:
     map_frame: map
     odom_frame: odom
     base_frame: base_link
-    scan_topic: /livox/scan_low
+    scan_topic: <robot_namespace>/livox/scan_low
 
 map_saver:
   ros__parameters:
@@ -500,6 +469,11 @@ map_saver:
     occupied_thresh_default: 0.65
     map_subscribe_transient_local: True
 
+map_server:
+  ros__parameters:
+    yaml_filename: "wearhouse_full.yaml"
+    topic_name: /map
+
 planner_server:
   ros__parameters:
     use_sim_time: true
@@ -508,74 +482,50 @@ planner_server:
     # Переключаем плагин на гибридный SmacPlanner для Аккермана
     GridBased:
       plugin: "nav2_smac_planner::SmacPlannerHybrid"
-      tolerance: 0.25                      # Допуск до конечной точки (метров)
+      tolerance: 0.5                      # Допуск до конечной точки (метров)
       allow_unknown: true                 # Разрешить строить путь через неизведанные зоны
       
       # КИНЕМАТИЧЕСКИЕ ПАРАМЕТРЫ ПОГРУЗЧИКА:
-      minimum_turning_radius: 1.6       # Минимальный радиус разворота вашего робота (в метрах)
+      minimum_turning_radius: 0.1        # Минимальный радиус разворота вашего робота (в метрах)
       motion_model_for_search: "REEDS_SHEPP" # REEDS_SHEPP (вперед и назад) или DUBIN (только вперед)
       
       # Настройки сетки планирования:
       angle_quantization_bins: 72           # Дискретизация углов (72 = шаги по 5 градусов)
-      max_iterations: 100000000            # Максимум итераций для поиска пути
+      max_iterations: 1000000             # Максимум итераций для поиска пути
       max_on_approach_iterations: 1000    # Итерации при приближении к цели
-      max_planning_time: 100.0
       smooth_path: true                   # Дополнительно сглаживать траекторию
       
       # Штрафы за маневры (помогают сделать движение более логичным):
-      change_penalty: 0.0                 # Штраф за смену направления руля
-      non_straight_penalty: 1.14          # Штраф за движение по дуге вместо прямой
-      reverse_penalty: 1.3                # Штраф за движение задним ходом (чтобы робот предпочитал ехать передом)
+      change_penalty: 1.5                 # Штраф за смену направления руля
+      non_straight_penalty: 1.05          # Штраф за движение по дуге вместо прямой
+      reverse_penalty: 1.1                # Штраф за движение задним ходом (чтобы робот предпочитал ехать передом)
       
-      analytic_expansion_ratio: 3.5
-      analytic_expansion_max_length: 6.0
-      analytic_expansion_max_cost: 200.0
-      analytic_expansion_max_cost_override: false
-
-
-      # Настройки встроенного оптимизатора траектории Smac Planner
+      # Настройки оптимизатора пути (Smoother):
       smoother:
-
-        # Максимальное количество итераций оптимизации.
-        # Большее значение может улучшить сглаживание, но увеличивает время планирования.
         max_iterations: 1000
-
-        # Вес гладкости траектории.
-        # Чем выше значение, тем сильнее оптимизатор старается убрать резкие изгибы.
-        # Слишком большое значение может привести к чрезмерному срезанию поворотов.
-        w_smooth: 0.4
-
-        # Вес сохранения исходной формы траектории.
-        # Чем выше значение, тем ближе сглаженный путь остаётся к пути,
-        # найденному Hybrid-A* до сглаживания.
-        w_data: 0.3
-
-        # Вес стоимости ячеек costmap при сглаживании.
-        # 0.0 означает, что оптимизатор не использует стоимость costmap
-        # при изменении формы траектории.
-        # Проверка столкновений при этом не обязательно отключается.
-        w_costmap: 0.2
+        w_smooth: 0.3
+        w_data: 0.2
+        w_costmap: 0.0
 
 smoother_server:
   ros__parameters:
     use_sim_time: true
-
+    costmap_topic: <robot_namespace>/global_costmap/costmap_raw
+    footprint_topic: <robot_namespace>/global_costmap/published_footprint
     smoother_plugins: ["simple_smoother"]
-
     simple_smoother:
       plugin: "nav2_smoother::SimpleSmoother"
-
-      tolerance: 1.0e-6
-      max_its: 200
-      do_refinement: false
+      tolerance: 1.0e-10
+      max_its: 1000
+      do_refinement: True
 
 behavior_server:
   ros__parameters:
     use_sim_time: true
-    local_costmap_topic: local_costmap/costmap_raw
-    global_costmap_topic: global_costmap/costmap_raw
-    local_footprint_topic: local_costmap/published_footprint
-    global_footprint_topic: global_costmap/published_footprint
+    local_costmap_topic: <robot_namespace>/local_costmap/costmap_raw
+    global_costmap_topic: <robot_namespace>/global_costmap/costmap_raw
+    local_footprint_topic: <robot_namespace>/local_costmap/published_footprint
+    global_footprint_topic: <robot_namespace>/global_costmap/published_footprint
     cycle_frequency: 10.0
     behavior_plugins: ["spin", "backup", "drive_on_heading", "wait"]
     spin:
@@ -620,7 +570,7 @@ velocity_smoother:
     min_velocity: [-1.20, 0.0, -1.45]
     max_accel: [1.30, 0.0, 1.5]
     max_decel: [-1.50, 0.0, -1.5]
-    odom_topic: /odometry/filtered
+    odom_topic: "<robot_namespace>/tricycle_controller/odom"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
     velocity_timeout: 1.0
@@ -629,48 +579,41 @@ velocity_smoother:
 collision_monitor:
   ros__parameters:
     use_sim_time: true
-    enabled: true
-    base_frame_id: base_link
+    enabled: false
+    base_frame_id: "base_link"
     odom_frame_id: "odom"
     cmd_vel_in_topic: "cmd_vel_smoothed"
-    #cmd_vel_out_topic: "/cmd_vel"
-    cmd_vel_out_topic: "/tricycle_controller/cmd_vel"
+    #cmd_vel_out_topic: "<robot_namespace>/cmd_vel"
+    cmd_vel_out_topic: "<robot_namespace>/tricycle_controller/cmd_vel"
     enable_stamped_cmd_vel: true
-    state_topic: "collision_monitor_state"
+    state_topic: "<robot_namespace>/collision_monitor_state"
     transform_tolerance: 0.2
     source_timeout: 1.0
     base_shift_correction: True
     stop_pub_timeout: 2.0
     # Polygons represent zone around the robot for "stop", "slowdown" and "limit" action types,
     # and robot footprint for "approach" action type.
-
     polygons: ["FootprintApproach"]
     FootprintApproach:
       type: "polygon"
       action_type: "approach"
-      footprint_topic: "local_costmap/published_footprint"
+      footprint_topic: "<robot_namespace>/local_costmap/published_footprint"
       time_before_collision: 1.2
       simulation_time_step: 0.1
       min_points: 6
       visualize: False
       enabled: True
+    observation_sources: ["livox_low"]
 
-    observation_sources: ["livox_low" ,"livox_middle"]
-    # scan:
-    #   type: "scan"
-    #   topic: "scan"
-    #   min_height: 0.15
-    #   max_height: 2.0
-    #   enabled: True
 
     livox_low:
       type: "scan"
-      topic: /livox/scan_low
+      topic: "<robot_namespace>/livox/scan_low"
       enabled: true
 
     livox_middle:
       type: "scan"
-      topic: /livox/scan_middle
+      topic: "<robot_namespace>/livox/scan_middle"
       enabled: true
 
 docking_server:
@@ -683,7 +626,7 @@ docking_server:
     undock_linear_tolerance: 0.05
     undock_angular_tolerance: 0.1
     max_retries: 3
-    base_frame: base_link
+    base_frame: "base_link"
     fixed_frame: "odom"
     dock_backwards: false
     dock_prestaging_tolerance: 0.5
@@ -719,9 +662,9 @@ docking_server:
       k_delta: 2.0
       v_linear_min: 0.15
       v_linear_max: 0.15
-      use_collision_detection: true
-      costmap_topic: "/local_costmap/costmap_raw"
-      footprint_topic: "/local_costmap/published_footprint"
+      use_collision_detection: false
+      costmap_topic: "<robot_namespace>/local_costmap/costmap_raw"
+      footprint_topic: "<robot_namespace>/local_costmap/published_footprint"
       transform_tolerance: 0.1
       projection_time: 5.0
       simulation_step: 0.1
@@ -729,7 +672,7 @@ docking_server:
 
 loopback_simulator:
   ros__parameters:
-    base_frame_id: base_link
+    base_frame_id: "base_link"
     odom_frame_id: "odom"
     map_frame_id: "map"
     scan_frame_id: "base_scan"  # tb4_loopback_simulator.launch.py remaps to 'rplidar_link'
@@ -739,14 +682,14 @@ loopback_simulator:
 route_server:
   ros__parameters:
     use_sim_time: true
-    base_frame: base_link
+    base_frame: "base_link"
     route_frame: "map"
     path_density: 0.05
     smooth_corners: true
-    smoothing_radius: 2.0
+    smoothing_radius: 1.0
     max_planning_time: 2.0
-
-    graph_filepath: "/home/asolovyev/navigation2_tutorials/avf_15/graphs/route.geojson"
+    costmap_topic: <robot_namespace>/global_costmap/costmap_raw 
+    graph_filepath: "$(find-pkg-share avf_15)/graphs/route.geojson"
 
     planner_plugin: "DefaultRoutePlanner"
     edge_cost_function: "DistanceScorer"

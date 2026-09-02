@@ -10,7 +10,7 @@ UndockFromPalletAction::UndockFromPalletAction(
   const std::string & xml_tag_name,
   const std::string & action_name,
   const BT::NodeConfiguration & conf)
-: nav2_behavior_tree::BtActionNode<opennav_docking_msgs::action::UndockRobot>(
+: nav2_behavior_tree::BtActionNode<nav2_msgs::action::UndockRobot>(
     xml_tag_name, action_name, conf)
 {
 }

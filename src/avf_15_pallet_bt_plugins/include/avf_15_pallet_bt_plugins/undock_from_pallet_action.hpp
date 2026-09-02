@@ -4,7 +4,7 @@
 #include <string>
 
 #include "nav2_behavior_tree/bt_action_node.hpp"
-#include "opennav_docking_msgs/action/undock_robot.hpp"
+#include "nav2_msgs/action/undock_robot.hpp"
 
 namespace avf_15_pallet_bt_plugins
 {
@@ -16,7 +16,7 @@ namespace avf_15_pallet_bt_plugins
  *   max_undocking_time (double) seconds, default 30.0
  */
 class UndockFromPalletAction
-  : public nav2_behavior_tree::BtActionNode<opennav_docking_msgs::action::UndockRobot>
+  : public nav2_behavior_tree::BtActionNode<nav2_msgs::action::UndockRobot>
 {
 public:
   UndockFromPalletAction(

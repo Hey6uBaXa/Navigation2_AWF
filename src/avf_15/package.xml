@@ -25,7 +25,11 @@
   <depend>rclpy</depend>
   <depend>nav2_msgs</depend>
   <depend>geometry_msgs</depend>
-
+  <!-- <gazebo_ros
+    gazebo_model_path="${prefix}/.."
+    gazebo_media_path="${prefix}/.."
+  /> -->
+  
   <export>
     <build_type>ament_cmake</build_type>
   </export>

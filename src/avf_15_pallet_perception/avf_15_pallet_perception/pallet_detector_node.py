@@ -48,31 +48,34 @@ class PalletDetectorNode(Node):
     def __init__(self):
         super().__init__('pallet_detector_node')
 
-        # ---- Parameters (tune to your pallet / mount) ----
-        self.declare_parameter('cloud_topic', '/front_depth_camera/points')
-        self.declare_parameter('base_frame', 'base_link')
-        self.declare_parameter('pose_topic', '/pallet_detector/dock_pose')
-        self.declare_parameter('found_topic', '/pallet_detector/pallet_found')
+        # ---- Параметры (настройте под свою паллету / крепление камеры) ----
+        self.declare_parameter('cloud_topic', 'rear_depth_camera/points')  # топик облака точек
+        self.declare_parameter('base_frame', 'robot01/base_link'
+)                  # система координат базы робота
+        self.declare_parameter('pose_topic', 'detected_dock_pose')   # топик публикации позы стыковки
+        self.declare_parameter('found_topic', 'pallet_detector/pallet_found')  # топик флага "паллета найдена"
 
-        # ROI in base_link (forward = +x per SDF convention, check your TF)
-        self.declare_parameter('roi_x_min', 0.3)
-        self.declare_parameter('roi_x_max', 3.0)
-        self.declare_parameter('roi_y_abs_max', 1.2)
+        # Область интереса (ROI) в системе координат base_link
+        # (вперёд = +x согласно конвенции SDF, проверьте свой TF)
+        self.declare_parameter('roi_x_min', -10.0)         # ближняя граница ROI по x, м
+        self.declare_parameter('roi_x_max', 10.0)         # дальняя граница ROI по x, м
+        self.declare_parameter('roi_y_abs_max', 1.2)     # макс. |y| — ширина ROI влево/вправо, м
 
-        # Fork insertion band (height above base_link where pallet openings are)
-        self.declare_parameter('band_min_height', 0.08)
-        self.declare_parameter('band_max_height', 0.35)
+        # Диапазон высот для проёмов под вилы (высота над base_link, где находятся отверстия паллеты)
+        self.declare_parameter('band_min_height', 0.04)  # нижняя граница полосы поиска отверстий, м
+        self.declare_parameter('band_max_height', 0.07)  # верхняя граница полосы поиска отверстий, м
 
-        # Pallet geometry (EUR pallet-ish defaults, metres) - ADJUST
-        self.declare_parameter('opening_width', 0.10)     # fork slot width
-        self.declare_parameter('opening_width_tol', 0.04)
-        self.declare_parameter('leg_spacing', 0.60)        # centre-leg to outer-leg distance
-        self.declare_parameter('leg_spacing_tol', 0.10)
+        # Геометрия паллеты (примерные значения для EUR-паллеты) — ТРЕБУЕТ НАСТРОЙКИ
+        self.declare_parameter('opening_width', 0.227)       # ширина проёма для вил, м
+        self.declare_parameter('opening_width_tol', 0.04)   # допуск по ширине проёма, м
+        self.declare_parameter('leg_spacing', 0.382)         # расстояние от центральной ножки до крайней, м
+        self.declare_parameter('leg_spacing_tol', 0.08)     # допуск по расстоянию между ножками, м
 
-        self.declare_parameter('dbscan_eps', 0.03)
-        self.declare_parameter('dbscan_min_samples', 6)
+        # Параметры кластеризации DBSCAN
+        self.declare_parameter('dbscan_eps', 0.008)          # радиус окрестности (eps), м
+        self.declare_parameter('dbscan_min_samples', 4)     # мин. число точек для формирования кластера
 
-        self.declare_parameter('publish_rate_hz', 5.0)
+        self.declare_parameter('publish_rate_hz', 5.0)      # частота публикации результата, Гц
 
         self.cloud_topic = self.get_parameter('cloud_topic').value
         self.base_frame = self.get_parameter('base_frame').value
@@ -123,33 +126,113 @@ class PalletDetectorNode(Node):
             return
 
         pts = self._cloud_to_base_frame(msg, tf)
+
+        # self.get_logger().info(
+        #     f'x: {np.nanmin(pts[:,0]):.2f} .. {np.nanmax(pts[:,0]):.2f}'
+        # )
+        # self.get_logger().info(
+        #     f'y: {np.nanmin(pts[:,1]):.2f} .. {np.nanmax(pts[:,1]):.2f}'
+        # )
+        # self.get_logger().info(
+        #     f'z: {np.nanmin(pts[:,2]):.2f} .. {np.nanmax(pts[:,2]):.2f}'
+        # )
+        
+
+        n_total = 0 if pts is None else len(pts)
         if pts is None or len(pts) < 20:
+            self.get_logger().info(
+                f'DEBUG: total transformed points = {n_total} (<20, aborting)',
+                throttle_duration_sec=1.0)
             self._publish_found(False)
             return
+
+        #floor_removed = pts[pts[:,2] > 0.02]
+        floor_removed = pts[
+            (pts[:,2] > 0.02) &
+            (pts[:,2] < 0.03)
+        ]
+        # self.get_logger().info(
+        #     f'after floor removal: {floor_removed.shape[0]}'
+        # )
+
+        band = self._filter_roi_band(floor_removed)
+
+        # self.get_logger().info(
+        #     f'after ROI: {band.shape[0]}'
+        # )
+        
+
 
         band = self._filter_roi_band(pts)
+        self._publish_debug_cloud(band, msg.header.stamp)
         if band.shape[0] < 15:
+            #self.get_logger().info(
+            #    f'DEBUG: total={n_total} band(ROI+height)={band.shape[0]} (<15, aborting). '
+            #   f'Check roi_x_min/max, roi_y_abs_max, band_min/max_height params.',
+            #   throttle_duration_sec=1.0)
             self._publish_found(False)
             return
 
-        pose_xy_yaw = self._find_pallet_opening(band)
+        n_clusters, n_candidates, pose_xy_yaw = self._find_pallet_opening_debug(band)
         if pose_xy_yaw is None:
+            self.get_logger().warn(
+                f'DEBUG: total={n_total} band={band.shape[0]} clusters={n_clusters} '
+                f'candidates={n_candidates} (no matching opening gap found). '
+                f'Check opening_width/opening_width_tol/dbscan_eps params.',
+                throttle_duration_sec=1.0)
             self._publish_found(False)
             return
 
         x, y, yaw = pose_xy_yaw
+        self.get_logger().info(
+            f'DEBUG: pallet found at x={x:.2f} y={y:.2f} yaw={yaw:.2f} '
+            f'(band={band.shape[0]} clusters={n_clusters})',
+            throttle_duration_sec=1.0)
         self._publish_pose(x, y, yaw, msg.header.stamp)
         self._publish_found(True)
 
     # ------------------------------------------------------------------
+    def _publish_debug_cloud(self, band: np.ndarray, stamp):
+        """Publish the filtered ROI+height-band cloud so it can be viewed
+        in RViz (add a PointCloud2 display on /pallet_detector/debug_band_cloud,
+        Fixed Frame = base_link) to visually check ROI/height parameters
+        against where the pallet actually is."""
+        if not hasattr(self, 'debug_cloud_pub'):
+            self.debug_cloud_pub = self.create_publisher(
+                PointCloud2, 'pallet_detector/debug_band_cloud', 5)
+        header = self.get_clock().now().to_msg()
+        msg = pc2.create_cloud_xyz32(
+            self._make_header(stamp), band.astype(np.float32).tolist()
+            if band.shape[0] < 20000 else band[:20000].astype(np.float32).tolist())
+        self.debug_cloud_pub.publish(msg)
+
+    def _make_header(self, stamp):
+        from std_msgs.msg import Header
+        h = Header()
+        h.frame_id = self.base_frame
+        h.stamp = stamp
+        return h
+
+    # ------------------------------------------------------------------
     def _cloud_to_base_frame(self, msg: PointCloud2, tf):
         """Read xyz points and bulk-transform into base_frame."""
-        gen = pc2.read_points(msg, field_names=('x', 'y', 'z'), skip_nans=True)
-        arr = np.array(list(gen), dtype=np.float32)
-        if arr.size == 0:
+        arr = pc2.read_points(msg, field_names=('x', 'y', 'z'), skip_nans=True)
+        if arr is None or arr.size == 0:
             return None
+
+        # read_points returns either a structured array (fields x,y,z) or
+        # already a plain (N,3) array depending on sensor_msgs_py version.
         if arr.dtype.names is not None:
-            arr = np.vstack([arr['x'], arr['y'], arr['z']]).T
+            arr = np.stack(
+                [arr['x'].astype(np.float32),
+                 arr['y'].astype(np.float32),
+                 arr['z'].astype(np.float32)], axis=-1)
+        else:
+            arr = np.asarray(arr, dtype=np.float32)
+
+        arr = arr.reshape(-1, 3)
+        if arr.shape[0] == 0:
+            return None
 
         # Build 4x4 transform matrix from the TransformStamped once,
         # then apply to all points (much faster than per-point tf2 calls)
@@ -157,8 +240,22 @@ class PalletDetectorNode(Node):
         q = tf.transform.rotation
         T = self._quat_trans_to_matrix(q, t)
 
-        homog = np.hstack([arr, np.ones((arr.shape[0], 1), dtype=np.float32)])
+        # homog = np.hstack([arr, np.ones((arr.shape[0], 1), dtype=np.float32)])
+        # out = (T @ homog.T).T[:, :3]
+        # return out
+        homog = np.hstack([
+            arr,
+            np.ones((arr.shape[0], 1), dtype=np.float32)
+        ])
+
         out = (T @ homog.T).T[:, :3]
+
+        # удалить NaN и Inf
+        out = out[np.isfinite(out).all(axis=1)]
+
+        if out.shape[0] == 0:
+            return None
+
         return out
 
     @staticmethod
@@ -188,6 +285,66 @@ class PalletDetectorNode(Node):
             (pts[:, 2] > z_min) & (pts[:, 2] < z_max)
         )
         return pts[mask]
+
+    # ------------------------------------------------------------------
+    def _find_pallet_opening_debug(self, band: np.ndarray):
+        """Same as _find_pallet_opening but also returns cluster/candidate
+        counts for diagnostics."""
+        xy = band[:, :2]
+        labels = self._cluster(xy)
+        if labels is None:
+            return 0, 0, None
+        unique = [l for l in set(labels) if l != -1]
+        if len(unique) < 2:
+            return len(unique), 0, None
+
+        clusters = []
+        for l in unique:
+            c = xy[labels == l]
+            clusters.append({
+                'y_mean': float(np.mean(c[:, 1])),
+                'x_mean': float(np.mean(c[:, 0])),
+                'y_min': float(np.min(c[:, 1])),
+                'y_max': float(np.max(c[:, 1])),
+                'n': c.shape[0],
+            })
+        clusters.sort(key=lambda c: c['y_mean'])
+
+        self.get_logger().info(
+            f'clusters found: {len(unique)}'
+        )
+        for l in unique:
+            c = xy[labels == l]
+
+            self.get_logger().info(
+                f'cluster size={c.shape[0]} '
+                f'x=[{c[:,0].min():.2f},{c[:,0].max():.2f}] '
+                f'y=[{c[:,1].min():.2f},{c[:,1].max():.2f}]'
+            )
+
+        opening_w = self.get_parameter('opening_width').value
+        opening_tol = self.get_parameter('opening_width_tol').value
+
+        candidates = []
+        for i in range(len(clusters) - 1):
+            gap = clusters[i + 1]['y_min'] - clusters[i]['y_max']
+            if abs(gap - opening_w) < opening_tol:
+                mid_y = 0.5 * (clusters[i + 1]['y_min'] + clusters[i]['y_max'])
+                mid_x = 0.5 * (clusters[i]['x_mean'] + clusters[i + 1]['x_mean'])
+                candidates.append((mid_x, mid_y))
+
+        if not candidates:
+            # log actual gaps found, to help re-tune opening_width
+            gaps = [round(clusters[i + 1]['y_min'] - clusters[i]['y_max'], 3)
+                    for i in range(len(clusters) - 1)]
+            self.get_logger().warn(
+                f'DEBUG: cluster gaps found (m): {gaps}, expected opening_width='
+                f'{opening_w}+-{opening_tol}', throttle_duration_sec=1.0)
+            return len(unique), 0, None
+
+        cx = float(np.mean([c[0] for c in candidates]))
+        cy = float(np.mean([c[1] for c in candidates]))
+        return len(unique), len(candidates), (cx, cy, 0.0)
 
     # ------------------------------------------------------------------
     def _find_pallet_opening(self, band: np.ndarray):
@@ -296,7 +453,8 @@ def main(args=None):
         pass
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == '__main__':

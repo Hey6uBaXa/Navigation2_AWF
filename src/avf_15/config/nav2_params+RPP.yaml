@@ -713,7 +713,7 @@ route_server:
     smoothing_radius: 1.0
     max_planning_time: 2.0
 
-    graph_filepath: "/home/asolovyev/navigation2_tutorials/avf_15/graphs/My-Rout.geojson"
+    graph_filepath: "/home/asolovyev/navigation2_tutorials/src/avf_15/graphs/My-Rout.geojson"
 
     planner_plugin: "DefaultRoutePlanner"
     edge_cost_function: "DistanceScorer"

@@ -294,7 +294,7 @@
         <collision name="collision">
           <geometry>
             <mesh>
-              <uri>package://avf_15/meshes/euro_pallet.stl</uri>
+              <uri>package://avf_15/meshes/euro_pallet.STL</uri>
             </mesh>
           </geometry>
         </collision>
@@ -302,7 +302,7 @@
         <visual name="visual">
           <geometry>
             <mesh>
-              <uri>package://avf_15/meshes/euro_pallet.stl</uri>
+              <uri>package://avf_15/meshes/euro_pallet.STL</uri>
             </mesh>
           </geometry>
             <material>

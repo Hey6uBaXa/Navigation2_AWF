@@ -10,7 +10,7 @@ DockAtPalletAction::DockAtPalletAction(
   const std::string & xml_tag_name,
   const std::string & action_name,
   const BT::NodeConfiguration & conf)
-: nav2_behavior_tree::BtActionNode<opennav_docking_msgs::action::DockRobot>(
+: nav2_behavior_tree::BtActionNode<nav2_msgs::action::DockRobot>(
     xml_tag_name, action_name, conf)
 {
 }

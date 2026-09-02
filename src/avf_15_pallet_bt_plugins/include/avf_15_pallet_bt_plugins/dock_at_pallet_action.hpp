@@ -4,7 +4,7 @@
 #include <string>
 
 #include "nav2_behavior_tree/bt_action_node.hpp"
-#include "opennav_docking_msgs/action/dock_robot.hpp"
+#include "nav2_msgs/action/dock_robot.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
 namespace avf_15_pallet_bt_plugins
@@ -24,7 +24,7 @@ namespace avf_15_pallet_bt_plugins
  *   max_staging_time (double) seconds, default 60.0
  */
 class DockAtPalletAction
-  : public nav2_behavior_tree::BtActionNode<opennav_docking_msgs::action::DockRobot>
+  : public nav2_behavior_tree::BtActionNode<nav2_msgs::action::DockRobot>
 {
 public:
   DockAtPalletAction(
