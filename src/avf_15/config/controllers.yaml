@@ -7,8 +7,8 @@
       type: joint_state_broadcaster/JointStateBroadcaster
     tricycle_controller:
       type: tricycle_controller/TricycleController
-    # fork_controller:
-    #   type: position_controllers/JointGroupPositionController
+    fork_controller:
+      type: position_controllers/JointGroupPositionController
 
 /**/tricycle_controller:
   ros__parameters:
@@ -41,7 +41,7 @@
     enable_odom_tf: false
     # Одометрия вычисляется по командам управления,
     # а не по энкодерам
-    open_loop: false
+    open_loop: true
     # Не только скорость, но и интеграция позиции
     odom_only_twist: false
     # Таймаут команд управления (мс)
@@ -61,9 +61,9 @@
     # vx, vy, vz, wx, wy, wz
     twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
 
-# /**/fork_controller:
-#   ros__parameters:
-#     joints:
-#       - J_main_villas
-#       - J_second_villas
-#     interface_name: position
+/**/fork_controller:
+  ros__parameters:
+    joints:
+      - J_main_villas
+      - J_second_villas
+    interface_name: position

@@ -130,8 +130,8 @@ controller_server:
       # Lookahead
       # =========================
 
-      lookahead_dist: 0.8
-      min_lookahead_dist: 0.5
+      lookahead_dist: 0.6
+      min_lookahead_dist: 0.7
       max_lookahead_dist: 1.5
       lookahead_time: 0.8
       use_velocity_scaled_lookahead_dist: true
@@ -149,8 +149,8 @@ controller_server:
       # =========================
 
       use_cost_regulated_linear_velocity_scaling: true
-      cost_scaling_dist: 0.4
-      cost_scaling_gain: 0.3
+      cost_scaling_dist: 0.1
+      cost_scaling_gain: 0.1
 
       # Должен совпадать с inflation_layer.cost_scaling_factor
       inflation_cost_scaling_factor: 1.2
@@ -201,7 +201,7 @@ controller_server:
       interpolate_curvature_after_goal: false
       use_cancel_deceleration: true
       cancel_deceleration: 0.5
-
+      
 local_costmap:
   local_costmap:
     ros__parameters:

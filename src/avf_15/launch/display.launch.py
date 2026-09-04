@@ -134,38 +134,37 @@ def generate_launch_description():
         ],
         remappings=tf_remappings
     )
-    # rviz_config = generate_rviz_config(f'{robot_name}', rviz_template_path)
+    rviz_config = generate_rviz_config(f'{robot_name}', rviz_template_path)
 
-    # rviz_node = Node(
-    #     package='rviz2',
-    #     executable='rviz2',
-    #     name='rviz2',
-    #     output='screen',
-    #     #namespace=robot_name,
-    #     arguments=['-d', rviz_config],
-    #     condition=IfCondition(LaunchConfiguration('use_rviz')),
-    #     remappings=tf_remappings
-    # )
-    def launch_rviz(context, rviz_template_path):
-        robot_name = LaunchConfiguration('robot_name').perform(context)
-        rviz_config = generate_rviz_config(robot_name, rviz_template_path)
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        output='screen',
+        #namespace=robot_name,
+        arguments=['-d', rviz_config],
+        condition=IfCondition(LaunchConfiguration('use_rviz')),
+        remappings=tf_remappings
+    )
+    # def launch_rviz(context, rviz_template_path):
+    #     robot_name = LaunchConfiguration('robot_name').perform(context)
+    #     rviz_config = generate_rviz_config(robot_name, rviz_template_path)
 
-        return [
-            Node(
-                package='rviz2',
-                executable='rviz2',
-                name='rviz2',
-                output='screen',
-                arguments=['-d', rviz_config],
-                condition=IfCondition(LaunchConfiguration('use_rviz')),
-                remappings=[
-                    ('/tf', 'tf'),
-                    ('/tf_static', 'tf_static'),
-                ],
-            )
-        ]
+    #     return [
+    #         Node(
+    #             package='rviz2',
+    #             executable='rviz2',
+    #             name='rviz2',
+    #             output='screen',
+    #             arguments=['-d', rviz_config],
+    #             condition=IfCondition(LaunchConfiguration('use_rviz')),
+    #             remappings=[
+    #                 ('/tf', 'tf'),
+    #                 ('/tf_static', 'tf_static'),
+    #             ],
+    #         )
+    #     ]
     
-    # namespaced_bridge = create_namespaced_bridge_yaml(robot_bridge_config_path, namespace)
 
     robot_ros_gz_bridge = Node(
         package='ros_gz_bridge',
@@ -324,7 +323,7 @@ def generate_launch_description():
             (
                 '{header: {frame_id: map}, '
                 'pose: {pose: {'
-                'position: {x: 1.0, y: 1.0, z: 0.0}, '
+                'position: {x: 0.0, y: 0.0, z: 0.0}, '
                 'orientation: {x: 0.0, y: 0.0, z: 0.0, w: 1.0}'
                 '}, '
                 'covariance: ['
@@ -374,16 +373,14 @@ def generate_launch_description():
 
         joint_state_broadcaster_spawner,
         tricycle_controller_spawner,
-        # fork_controller_spawner,
+        fork_controller_spawner,
         
         front_camera_bridge_image,
         front_camera_bridge_depth,
         rear_camera_bridge_image,
         rear_camera_bridge_depth,
-        # rviz_node,
-        OpaqueFunction(
-            function=launch_rviz,
-            args=[rviz_template_path],),
+        rviz_node,
+
     ])
 
     return LaunchDescription([
@@ -400,6 +397,6 @@ def generate_launch_description():
         
         robot_group,
         nav2_bringup_launch,
-        initial_pose
+        initial_pose,
         
     ])

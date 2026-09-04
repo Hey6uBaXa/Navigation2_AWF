@@ -24,6 +24,16 @@ class ForkControl(Node):
     def __init__(self):
         super().__init__('fork_gui')
 
+        self.declare_parameter('robot_name', '')
+        robot_name = self.get_parameter(
+            'robot_name'
+        ).get_parameter_value().string_value
+
+        if robot_name:
+            self.ns = f'/{robot_name}'
+        else:
+            self.ns = '/robot02'
+
         self.target_positions = {
             'J_main_villas': 0.0,
             'J_second_villas': 0.0,
@@ -41,13 +51,13 @@ class ForkControl(Node):
 
         self.pub = self.create_publisher(
             Float64MultiArray,
-            '/fork_controller/commands',
+            f'{self.ns}/fork_controller/commands',
             10
         )
 
         self.cmd_pub = self.create_publisher(
             TwistStamped,
-            '/tricycle_controller/cmd_vel',
+            f'{self.ns}/tricycle_controller/cmd_vel',
             10
         )
 
@@ -61,13 +71,13 @@ class ForkControl(Node):
 
         self.sensor_pub = self.create_publisher(
             JointState,
-            '/fork_sensor_sim',
+            f'{self.ns}/fork_sensor_sim',
             10
         )
 
         self.sensor_state_sub = self.create_subscription(
             JointState,
-            '/fork_sensor_sim',
+            f'{self.ns}/fork_sensor_sim',
             self.sensor_state_callback,
             10
         )
@@ -139,8 +149,8 @@ class Window(QWidget):
         self.pressed_keys = set()
         layout = QVBoxLayout()
 
+        layout.addWidget(QLabel(ros_node.ns))
         layout.addWidget(QLabel("Main Villas"))
-
         self.slider1 = QSlider(Qt.Horizontal)
         self.slider1.setRange(-3, 100)
         self.slider1.valueChanged.connect(self.publish)

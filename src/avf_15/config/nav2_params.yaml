@@ -27,8 +27,8 @@ amcl:
     recovery_alpha_fast: 0.0
     recovery_alpha_slow: 0.0
     resample_interval: 1
-    robot_model_type: "nav2_amcl::DifferentialMotionModel"
-    #robot_model_type: "nav2_amcl::OmniMotionModel"
+    #robot_model_type: "nav2_amcl::DifferentialMotionModel"
+    robot_model_type: "nav2_amcl::OmniMotionModel"
     save_pose_rate: 0.5
     sigma_hit: 0.2
     tf_broadcast: true
@@ -57,6 +57,7 @@ bt_navigator:
     default_server_timeout: 20
     wait_for_service_timeout: 1000
     action_server_result_timeout: 900.0
+    default_nav_to_pose_bt_xml: "$(find-pkg-share avf_15)/behavior_trees/nav_to_pose_with_consistent_replanning_and_if_path_becomes_invalid.xml"
     navigators: ["navigate_to_pose", "navigate_through_poses"]
     navigate_to_pose:
       plugin: "nav2_bt_navigator::NavigateToPoseNavigator"
@@ -116,7 +117,7 @@ controller_server:
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.20
-      yaw_goal_tolerance: 0.20
+      yaw_goal_tolerance: 0.35
     FollowPath:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
 
@@ -130,8 +131,8 @@ controller_server:
       # Lookahead
       # =========================
 
-      lookahead_dist: 0.8
-      min_lookahead_dist: 0.5
+      lookahead_dist: 0.6
+      min_lookahead_dist: 0.7
       max_lookahead_dist: 1.5
       lookahead_time: 0.8
       use_velocity_scaled_lookahead_dist: true
@@ -149,8 +150,8 @@ controller_server:
       # =========================
 
       use_cost_regulated_linear_velocity_scaling: true
-      cost_scaling_dist: 0.4
-      cost_scaling_gain: 0.3
+      cost_scaling_dist: 0.1
+      cost_scaling_gain: 0.1
 
       # Должен совпадать с inflation_layer.cost_scaling_factor
       inflation_cost_scaling_factor: 1.2
@@ -209,7 +210,7 @@ local_costmap:
       update_frequency: 10.0
       publish_frequency: 5.0
       global_frame: odom
-      robot_base_frame: base_link
+      robot_base_frame: base_footprint
       rolling_window: true
       map_topic: /map
       width: 40
@@ -222,17 +223,17 @@ local_costmap:
       #   [-1.50, 0.50]
       # ]"
       footprint: "[
-        [-0.13, 0.50],
-        [-0.13, -0.10],
-        [1.40, -0.20],
-        [1.40, 0.60]
-      ]"
+        [1.40, 0.30],
+        [1.40,-0.30],
+        [-0.15,-0.30],
+        [-0.15, 0.30]
+        ]"
       #plugins: ["voxel_layer", "inflation_layer", "obstacle_layer"]
       plugins: ["obstacle_layer", "inflation_layer", "voxel_layer"]
 
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 4.0
+        cost_scaling_factor: 2.0
         inflation_radius: 1.6
 
       voxel_layer:
@@ -368,7 +369,7 @@ global_costmap:
       publish_frequency: 2.0
       global_frame: map
       map_topic: /map
-      robot_base_frame: base_link
+      robot_base_frame: base_footprint
       # footprint: "[
       #   [0.55, 0.50],
       #   [0.55, -0.50],
@@ -376,18 +377,18 @@ global_costmap:
       #   [-1.50, 0.50]
       # ]"
       footprint: "[
-        [-0.13, 0.50],
-        [-0.13, -0.10],
-        [1.40, -0.30],
-        [1.40, 0.60]
-      ]"
+        [ 1.40, 0.30],
+        [ 1.40,-0.30],
+        [-0.15,-0.30],
+        [-0.15, 0.30]
+        ]"
       resolution: 0.05
       track_unknown_space: true
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
-        observation_sources: livox_low
+        observation_sources: livox_low livox_middle
 
 
         livox:
@@ -486,19 +487,19 @@ planner_server:
       allow_unknown: true                 # Разрешить строить путь через неизведанные зоны
       
       # КИНЕМАТИЧЕСКИЕ ПАРАМЕТРЫ ПОГРУЗЧИКА:
-      minimum_turning_radius: 0.1        # Минимальный радиус разворота вашего робота (в метрах)
+      minimum_turning_radius: 1.6        # Минимальный радиус разворота вашего робота (в метрах)
       motion_model_for_search: "REEDS_SHEPP" # REEDS_SHEPP (вперед и назад) или DUBIN (только вперед)
       
       # Настройки сетки планирования:
       angle_quantization_bins: 72           # Дискретизация углов (72 = шаги по 5 градусов)
-      max_iterations: 1000000             # Максимум итераций для поиска пути
+      max_iterations: 100000000             # Максимум итераций для поиска пути
       max_on_approach_iterations: 1000    # Итерации при приближении к цели
       smooth_path: true                   # Дополнительно сглаживать траекторию
       
       # Штрафы за маневры (помогают сделать движение более логичным):
       change_penalty: 1.5                 # Штраф за смену направления руля
-      non_straight_penalty: 1.05          # Штраф за движение по дуге вместо прямой
-      reverse_penalty: 1.1                # Штраф за движение задним ходом (чтобы робот предпочитал ехать передом)
+      non_straight_penalty: 1.3         # Штраф за движение по дуге вместо прямой
+      reverse_penalty: 1.5                # Штраф за движение задним ходом (чтобы робот предпочитал ехать передом)
       
       # Настройки оптимизатора пути (Smoother):
       smoother:
@@ -582,7 +583,7 @@ collision_monitor:
     enabled: false
     base_frame_id: "base_link"
     odom_frame_id: "odom"
-    cmd_vel_in_topic: "cmd_vel_smoothed"
+    cmd_vel_in_topic: "<robot_namespace>/cmd_vel_smoothed"
     #cmd_vel_out_topic: "<robot_namespace>/cmd_vel"
     cmd_vel_out_topic: "<robot_namespace>/tricycle_controller/cmd_vel"
     enable_stamped_cmd_vel: true
